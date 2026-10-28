@@ -1,4 +1,4 @@
-# safe-driveway
+# Safe Driveway
 
 Hardware and software solution to prevent car scratches in narrow driveways and garage entrances
 
@@ -21,3 +21,15 @@ The result is that the driver inches through the passage, often with a passenger
 Instead of relying on what the car can see, **put the sensing at the passage itself.**
 
 You place one or more small remote devices at the narrow spot. They communicate with a mobile phone inside the car and report the car's exact position relative to the passage. The phone shows the driver how far the car is from each side, so they can steer through with confidence.
+
+## Prototype hardware
+
+The first prototype of the remote device is built from off-the-shelf parts:
+
+- **ESP32 development board** with a built-in battery management circuit (BMS) for Li-Po cells, Wi-Fi, Bluetooth, MicroPython support and a USB-C connector
+- **VL53L0X laser time-of-flight (ToF) distance sensor**
+- **Acoustic buzzer** for audible signalling
+- **Li-Po battery 803450**, 3.7 V, 1500 mAh
+- **Waterproof 19 mm switch** with white LED backlight
+- **Green and red LED** for visual status
+- **Enclosure** to house the electronics at the passage
