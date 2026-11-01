@@ -26,10 +26,12 @@ You place one or more small remote devices at the narrow spot. They communicate 
 
 The first prototype of the remote device is built from off-the-shelf parts:
 
-- **ESP32 development board** with a built-in battery management circuit (BMS) for Li-Po cells, Wi-Fi, Bluetooth, MicroPython support and a USB-C connector
+- **ESP32 development board** compatible with the WEMOS LOLIN32 Lite, with a built-in Li-Po charger, Wi-Fi, Bluetooth, MicroPython support and a USB-C connector
 - **VL53L0X laser time-of-flight (ToF) distance sensor**
-- **Acoustic buzzer** for audible signalling
+- **YL-44 active buzzer module** for audible signalling
 - **Li-Po battery 803450**, 3.7 V, 1500 mAh
-- **Waterproof 19 mm switch** with white LED backlight
-- **Green and red LED** for visual status
-- **Enclosure** to house the electronics at the passage
+- **Waterproof 19 mm latching switch** with white LED backlight, used as the power switch and power light
+- **Green and red 5 mm LED** for visual status
+- **IP65 plastic box**, 120 × 80 × 50 mm, to house the electronics at the passage. A 3D-printed enclosure will follow.
+
+The device talks to the phone over Bluetooth Low Energy. [device/prototype-assembly.md](device/prototype-assembly.md) describes how to wire and assemble a unit, and [doc/adr/](doc/adr/) records the decisions behind the hardware and the communication method.
