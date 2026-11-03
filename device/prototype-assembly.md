@@ -2,7 +2,7 @@
 
 This document describes how to wire and assemble one unit of the first Safe Driveway prototype. Why these parts were chosen is recorded in [ADR 0001](../doc/adr/0001-prototype-hardware.md), and the choice of Bluetooth Low Energy in [ADR 0002](../doc/adr/0002-ble-communication.md).
 
-This document covers hardware only. The blink and beep patterns, the distance thresholds and what "ready" means are defined by the firmware and will be documented with it.
+This document covers hardware only. The blink and beep patterns, the distance thresholds and what "ready" means are defined by the firmware and will be documented with it. How to set up a computer to flash and test a unit is in [README.md](README.md).
 
 ## What each part does
 
@@ -46,7 +46,7 @@ This document covers hardware only. The blink and beep patterns, the distance th
 - Heat gun or lighter for heat-shrink
 - Drill with 3 mm and 8 mm bits, a step drill up to 19 mm, and small files
 - Hot glue gun
-- Computer with a USB cable for flashing MicroPython
+- Computer with a USB cable that carries data, set up as described in [README.md](README.md#setup), for flashing and testing the board
 
 ## Pin assignments
 
@@ -215,13 +215,9 @@ The seller lists only the outside dimensions, so check every position against th
 Do this before soldering anything.
 
 1. Connect the board to the computer by USB. No battery yet. If a USB-C to USB-C cable doesn't power the board, use a USB-A to USB-C cable; some clones lack the resistors that USB-C chargers look for.
-2. Flash the generic ESP32 build of MicroPython from [micropython.org/download/ESP32_GENERIC](https://micropython.org/download/ESP32_GENERIC/) with `esptool`.
-3. Open the REPL, for example with `mpremote`, and check that the board responds:
-
-   ```python
-   import machine
-   machine.freq()
-   ```
+2. In the `device/` folder, run `just doctor` and fix what it reports. See [README.md](README.md#setup) for setting up the computer.
+3. Flash MicroPython with `just flash`. It shows the board's chip and MAC address, asks before erasing the board, and writes the release pinned in [micropython.toml](micropython.toml).
+4. Check that the board responds with `just bringup board`. See [Board](#board).
 
 ### 2. Check battery polarity
 
@@ -268,67 +264,66 @@ Fix the board and the battery, route the wires, add strain relief and plug the U
 
 ### 9. Run the bring-up tests
 
-See [Bring-up tests](#bring-up-tests). Close the lid only after every test passes.
+Run `just bringup` and answer its questions, then check power and charging by hand. See [Bring-up tests](#bring-up-tests). Close the lid only after every test passes.
 
 ## Bring-up tests
 
-Run these from the MicroPython REPL with the board connected over USB, through the panel socket. The battery doesn't have to be switched on.
+Run them with the board connected over USB, through the panel socket. The battery doesn't have to be switched on, except for the battery voltage test. In the `device/` folder:
+
+```bash
+just bringup
+```
+
+The run tests the board, the laser sensor, the LEDs, the buzzer and, if fitted, the battery divider. It verifies the board and the sensor by itself and asks yes/no questions about what you see and hear. A failed test prints a hint and a link to its section below, and the run goes on with the next one. At the end it prints a summary, the notes the firmware needs and the tests still to do by hand.
+
+To run only some tests, name them, for example while wiring: `just bringup sensor leds`. The board test always runs first. The code of each test is in [board/bringup.py](board/bringup.py), which also says how to run a test by hand in the REPL.
+
+### Board
+
+The board answers over USB and prints its MicroPython version, CPU frequency and unique ID. The unique ID is also the board's MAC address, which tells units apart.
+
+- **The board doesn't respond:** run `just doctor`. A new board needs `just flash` first.
+- **It runs a different MicroPython version than the one pinned in [micropython.toml](micropython.toml):** run `just flash`.
 
 ### Laser sensor
 
-```python
-from machine import Pin, I2C
-import time
+The sensor answers at I2C address `0x29`, identifies itself as a VL53L0X (model ID `0xEE` in register `0xC0`), disappears from the bus while XSHUT is pulled low, and comes back when XSHUT is released.
 
-xshut = Pin(16, Pin.OPEN_DRAIN, value=1)   # released: sensor on
-time.sleep_ms(10)
-i2c = I2C(0, scl=Pin(18), sda=Pin(19), freq=400_000)
-print(i2c.scan())                          # expect [41], which is 0x29
-print(i2c.readfrom_mem(0x29, 0xC0, 1))     # expect b'\xee', the VL53L0X model ID
-
-xshut.value(0)                             # sensor off
-time.sleep_ms(10)
-print(i2c.scan())                          # expect []
-xshut.value(1)                             # sensor back on
-```
-
-- **Nothing found with XSHUT released, but the sensor appears once the XSHUT wire is disconnected:** the module has no pull-up on XSHUT. Add a 10 kΩ resistor from XSHUT to `3V`.
+- **Nothing found with XSHUT released:** the run tries again with the ESP32's weak internal pull-up on XSHUT. If the sensor then answers, the module has no pull-up on XSHUT. Add a 10 kΩ resistor from XSHUT to `3V`.
 - **Nothing found at all:** check `3V`, `GND`, and whether SCL and SDA are swapped.
+- **The sensor stays on with XSHUT low:** check the wire from pin `16` to XSHUT.
+- **The sensor is a VL53L1X:** VL53L1X modules have the same pins and answer at the same address, so the wiring tests pass. The run recognises one by its model ID, `0xEACC` in 16-bit register `0x010F`. Its registers and driver differ from the VL53L0X's, so the firmware has to match the sensor that is fitted.
 
 Distance readings need a VL53L0X driver, which isn't part of MicroPython. They're checked once the firmware exists.
 
 ### LEDs
 
-```python
-green = Pin(26, Pin.OUT, value=1)   # green on
-red = Pin(27, Pin.OUT, value=1)     # red on
-green.off(); red.off()
-```
+The run lights the green LED, then the red one, then both, and asks each time whether that is what you see.
+
+- **An LED stays dark:** check its wire (green to pin `26`, red to pin `27`), its 220 Ω resistor, and that its long leg, the anode, is on the resistor side.
+- **The green LED is much dimmer than the red one:** it is probably a 3 V type. Swap its resistor for 100 Ω.
 
 ### Buzzer
 
-```python
-buzzer = Pin(25, Pin.OUT, value=1)  # HIGH
-buzzer.value(0)                     # LOW
-buzzer.value(1)
-```
+The run sets pin `25` HIGH, then LOW, and asks each time whether the buzzer sounds. From the answers it tells which level sounds the buzzer.
 
-- On the usual low-triggered YL-44, LOW sounds the buzzer and HIGH silences it. If yours does the opposite, it's a high-triggered variant. Note that here, since the firmware has to know.
-- If the buzzer chirps or hums faintly while the board boots, add a 10 kΩ resistor from pin `25` to `3V`.
+- On the usual low-triggered YL-44, LOW sounds the buzzer and HIGH silences it. If yours does the opposite, it's a high-triggered variant. The run says so under "Note for the firmware". Note it down, since the firmware has to know.
+- **It sounds at both levels:** the YL-44 is probably powered from USB 5 V or the battery. Power it from `3V`, see [Signal wiring](#signal-wiring).
+- **It stays silent:** check the YL-44's `VCC` (splice S1), `GND` (splice S3) and `I/O` (pin `25`).
+- **It chirps or hums faintly while the board boots:** add a 10 kΩ resistor from pin `25` to `3V`.
 
 ### Battery voltage (optional)
 
-Switch the unit on with the battery connected.
+Only for units with the battery divider. The full run asks whether it is fitted; `just bringup battery` doesn't ask. When the run asks, connect the battery and switch the unit on.
 
-```python
-from machine import ADC
-adc = ADC(Pin(35), atten=ADC.ATTN_11DB)
-print(adc.read_uv() * 2 / 1_000_000)  # battery voltage in V, about 3.0–4.2
-```
+The run reads the battery voltage on pin `35`, which should be about 3.0–4.2 V. It then asks for a multimeter reading across the battery and prints the offset between the two. Note the offset down.
 
-Compare it with a multimeter reading across the battery and note any offset.
+- **About 0 V:** check that the unit is switched on and that the top of the divider is wired to the switch's `LED +` terminal.
+- **Outside 3.0–4.2 V:** check both 100 kΩ resistors.
 
 ### Power and charging
+
+These can't be tested over USB, so check them by hand:
 
 1. Unplug USB and switch on. The ring lights, and the board's `3V` pin reads about 3.3 V.
 2. Plug in USB with the switch on. The board's charge LED lights while the battery charges.

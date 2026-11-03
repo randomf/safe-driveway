@@ -1,0 +1,45 @@
+# Tasks for the Safe Driveway remote device. Run `just` to list them.
+#
+# The board's serial port is found automatically. When more than one is
+# connected, choose with PORT, for example: PORT=/dev/ttyUSB1 just bringup
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+
+_default:
+    @just --list --unsorted
+
+# Check that this computer is ready to work with the board
+[no-exit-message]
+doctor:
+    @uv run python -m host.doctor
+
+# Erase the board and write the pinned MicroPython; [--yes] skips the question, [FIRMWARE] writes another image
+[no-exit-message]
+flash *args:
+    @uv run python -m host.flash {{ args }}
+
+# Open the MicroPython REPL on the board (leave with Ctrl-] or Ctrl-X)
+[no-exit-message]
+repl:
+    @uv run python -m host.repl
+
+# Run the guided bring-up test: all checks, or only those named (board sensor leds buzzer battery)
+[no-exit-message]
+bringup *checks:
+    @uv run python -m host.bringup {{ checks }}
+
+# Install MicroPython type stubs so editors understand the code in board/
+[no-exit-message]
+stubs:
+    @uv run python -m host.stubs
+
+# Check code style without changing anything
+[no-exit-message]
+lint:
+    @uv run ruff check
+    @uv run ruff format --check
+
+# Format the code and fix what ruff can fix by itself
+fmt:
+    @uv run ruff format
+    @uv run ruff check --fix
