@@ -1,0 +1,12 @@
+# The MicroPython release that `just flash` writes onto every unit.
+#
+# This is the only place the version is set. `just stubs`, `just doctor` and
+# `just bringup` read it from here. To change it, see "Changing the MicroPython
+# version" in README.md.
+
+board = "ESP32_GENERIC"
+version = "1.29.0"
+date = "20260824"
+
+# SHA-256 of ESP32_GENERIC-20260824-v1.29.0.bin as downloaded from micropython.org.
+sha256 = "e67ad6015a0a504c1fec9aa9bbf589d0432ed28e62546f4f8dd8a147f8bd95f6"

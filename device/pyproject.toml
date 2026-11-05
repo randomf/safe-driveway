@@ -1,0 +1,32 @@
+[project]
+name = "safe-driveway-device"
+version = "0.1.0"
+description = "Host-side tools for flashing and testing the Safe Driveway remote device"
+requires-python = ">=3.12"
+dependencies = [
+    "esptool>=5.6.0",
+    "mpremote>=1.29.0",
+    "pyserial>=3.5",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.3",
+]
+
+[tool.ruff]
+line-length = 100
+# Leave the code examples in the docs as they are written.
+extend-exclude = [".stubs", "*.md"]
+
+[tool.ruff.lint]
+extend-select = ["I", "B", "UP"]
+
+# Editor type checking for the host tools. Board code has its own settings with
+# the MicroPython stubs in board/pyrightconfig.json.
+[tool.pyright]
+include = ["host"]
+typeCheckingMode = "standard"

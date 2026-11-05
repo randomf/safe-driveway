@@ -2,14 +2,14 @@
 
 This document describes how to wire and assemble one unit of the first Safe Driveway prototype. Why these parts were chosen is recorded in [ADR 0001](../doc/adr/0001-prototype-hardware.md), and the choice of Bluetooth Low Energy in [ADR 0002](../doc/adr/0002-ble-communication.md).
 
-This document covers hardware only. The blink and beep patterns, the distance thresholds and what "ready" means are defined by the firmware and will be documented with it.
+This document covers hardware only. The blink and beep patterns, the distance thresholds and what "ready" means are defined by the firmware and will be documented with it. How to set up a computer to flash and test a unit is in [README.md](README.md).
 
 ## What each part does
 
 | Part | Job |
 |---|---|
 | ESP32 board | Runs the firmware, talks to the phone over BLE using its built-in radio, and charges the battery over USB-C |
-| VL53L0X laser sensor | Measures the distance from the unit to the side of the car |
+| VL53L1X laser sensor | Measures the distance from the unit to the side of the car |
 | YL-44 buzzer | Signals the distance with sound |
 | Green LED | Shows that the unit is ready |
 | Red LED | Signals the distance with light |
@@ -21,7 +21,7 @@ This document covers hardware only. The blink and beep patterns, the distance th
 | Part | Qty | Notes |
 |---|---|---|
 | ESP32 development board with Li-Po charger and USB-C | 1 | [dratek.cz 232739](https://dratek.cz/arduino-platforma/232739-vyvojova-deska-esp32-s-bms-pro-lipol-baterii-wi-fi-bluetooth-micropython-usb-c.html). A WEMOS LOLIN32 Lite clone: CH340, TP4054-class charger, JST-PH 2 mm battery socket, 51 × 26 mm |
-| VL53L0X laser time-of-flight module | 1 | Typically sold as GY-VL53L0XV2. Any breakout with VIN, GND, SCL, SDA, XSHUT and GPIO1 pins and an onboard regulator works |
+| VL53L1X laser time-of-flight module | 1 | Any breakout with VIN, GND, SCL, SDA, XSHUT and GPIO1 pins and an onboard regulator works. VL53L0X modules look the same, so check the chip with `just bringup sensor`. See [ADR 0004](../doc/adr/0004-vl53l1x-distance-sensor.md) |
 | YL-44 active buzzer module | 1 | [dratek.cz 849](https://dratek.cz/arduino-platforma/849-eses-akusticky-bzucak-pro-jednodeskove-pocitace.html). Pins VCC, I/O, GND |
 | Li-Po battery 803450, 3.7 V, 1500 mAh | 1 | With a JST-PH 2.0 plug and a built-in protection circuit |
 | 19 mm latching switch with 6 V white LED ring | 1 | Terminals C, NO, NC and the two LED terminals |
@@ -46,7 +46,7 @@ This document covers hardware only. The blink and beep patterns, the distance th
 - Heat gun or lighter for heat-shrink
 - Drill with 3 mm and 8 mm bits, a step drill up to 19 mm, and small files
 - Hot glue gun
-- Computer with a USB cable for flashing MicroPython
+- Computer with a USB cable that carries data, set up as described in [README.md](README.md#setup), for flashing and testing the board
 
 ## Pin assignments
 
@@ -54,12 +54,12 @@ Pins are referred to by the label printed on the board. Clone boards place the p
 
 | Board pin | Connects to | Notes |
 |---|---|---|
-| `3V` | VL53L0X `VIN`, YL-44 `VCC` | Via splice S1 |
-| `GND` | VL53L0X `GND`, wall-A ground lead, divider (optional) | Via splice S2 |
-| `18` | VL53L0X `SCL` | I2C clock |
-| `19` | VL53L0X `SDA` | I2C data |
-| `16` | VL53L0X `XSHUT` | Sensor shutdown. Firmware drives it open-drain: low = off, released = on |
-| `17` | VL53L0X `GPIO1` | Sensor interrupt. Firmware enables the internal pull-up |
+| `3V` | VL53L1X `VIN`, YL-44 `VCC` | Via splice S1 |
+| `GND` | VL53L1X `GND`, wall-A ground lead, divider (optional) | Via splice S2 |
+| `18` | VL53L1X `SCL` | I2C clock |
+| `19` | VL53L1X `SDA` | I2C data |
+| `16` | VL53L1X `XSHUT` | Sensor shutdown. Firmware drives it open-drain: low = off, released = on |
+| `17` | VL53L1X `GPIO1` | Sensor interrupt. Firmware enables the internal pull-up |
 | `25` | YL-44 `I/O` | Low-triggered: LOW = sound, HIGH = silent. Check yours, see [Bring-up tests](#bring-up-tests) |
 | `26` | Green LED anode, through 220 Ω | HIGH = on |
 | `27` | Red LED anode, through 220 Ω | HIGH = on |
@@ -113,23 +113,23 @@ Pin 35 sees half the battery voltage: 1.5–2.1 V for a 3.0–4.2 V cell. That i
 
 Every signal wire runs straight from a board pin to its part. The board has only one `3V` pin and one `GND` pin, so wires that share them are joined in insulated solder splices instead of being stacked on the pin:
 
-- **S1** (near the board): board `3V`, VL53L0X `VIN`, YL-44 `VCC`.
-- **S2** (near the board): board `GND`, VL53L0X `GND`, the wall-A ground lead, and the battery divider's ground (optional).
+- **S1** (near the board): board `3V`, VL53L1X `VIN`, YL-44 `VCC`.
+- **S2** (near the board): board `GND`, VL53L1X `GND`, the wall-A ground lead, and the battery divider's ground (optional).
 - **S3** (at wall A): the wall-A ground lead, YL-44 `GND`, green LED cathode, red LED cathode.
 
 ```
  board pin                                          part
- 3V   ──[S1]──┬───────────────────────────────────►  VL53L0X VIN
+ 3V   ──[S1]──┬───────────────────────────────────►  VL53L1X VIN
               └───────────────────────────────────►  YL-44 VCC
- GND  ──[S2]──┬───────────────────────────────────►  VL53L0X GND
+ GND  ──[S2]──┬───────────────────────────────────►  VL53L1X GND
               ├── wall-A ground lead ──[S3]──┬────►  YL-44 GND
               │                              ├────►  green LED cathode
               │                              └────►  red LED cathode
               └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ►  divider ground (optional)
- 18   ────────────────────────────────────────────►  VL53L0X SCL
- 19   ────────────────────────────────────────────►  VL53L0X SDA
- 16   ────────────────────────────────────────────►  VL53L0X XSHUT
- 17   ◄───────────────────────────────────────────   VL53L0X GPIO1
+ 18   ────────────────────────────────────────────►  VL53L1X SCL
+ 19   ────────────────────────────────────────────►  VL53L1X SDA
+ 16   ────────────────────────────────────────────►  VL53L1X XSHUT
+ 17   ◄───────────────────────────────────────────   VL53L1X GPIO1
  25   ────────────────────────────────────────────►  YL-44 I/O
  26   ────── 220 Ω ───────────────────────────────►  green LED anode
  27   ────── 220 Ω ───────────────────────────────►  red LED anode
@@ -139,7 +139,7 @@ Every signal wire runs straight from a board pin to its part. The board has only
 Notes:
 
 - **Power the YL-44 from `3V`, never from USB 5 V or the battery.** It switches the buzzer with a PNP transistor, and a 3.3 V HIGH from the ESP32 can only turn that transistor fully off if the module's VCC is also 3.3 V.
-- **The VL53L0X module needs no extra pull-up resistors.** Its I2C pull-ups and its regulator are on the module.
+- **The VL53L1X module needs no extra pull-up resistors.** Its I2C pull-ups and its regulator are on the module.
 - **LED legs:** the anode is the long leg; the cathode is the short leg, on the flat side of the rim. Solder each 220 Ω resistor directly to the anode leg and cover it with heat-shrink.
 - **If the green LED is much dimmer than the red one,** it is probably a 3 V type. Swap its resistor for 100 Ω.
 
@@ -193,7 +193,7 @@ A unit for the right-hand wall is the same unit turned upside down. Wall A still
 
 The seller lists only the outside dimensions, so check every position against the actual box. Keep holes at least 12 mm from the box edges to clear the lid screw bosses and the gasket.
 
-- **Lid, sensor aperture:** an 8 mm round hole in the centre of the lid. Mount the VL53L0X module on the inside of the lid with its sensor chip (the small black package with two windows) centred in the hole and as close to the lid as possible. Fix it with M2 screws through the module's holes, or with hot glue on the module's edges. Keep glue off the chip, and peel off the thin protective film if there is one over the chip. The aperture must not cut into the sensor's 25° field of view, and nothing shiny may sit inside that cone.
+- **Lid, sensor aperture:** an 8 mm round hole in the centre of the lid. Mount the VL53L1X module on the inside of the lid with its sensor chip (the small black package with two windows) centred in the hole and as close to the lid as possible. Fix it with M2 screws through the module's holes, or with hot glue on the module's edges. Keep glue off the chip, and peel off the thin protective film if there is one over the chip. The aperture must not cut into the sensor's 27° field of view, and nothing shiny may sit inside that cone.
 - **Wall A, LEDs:** two holes sized for your bezels (typically 6–8 mm), halfway between the two long walls and about 15 mm apart along the depth. The green LED goes nearer the base, the red one nearer the lid.
 - **Wall A, buzzer:** three or four 3 mm sound holes. Fix the YL-44 behind them with its M3 hole, or with hot glue, so the buzzer faces the holes as closely as possible.
 - **Wall B, switch:** a 19 mm hole. The switch body reaches about 30–40 mm into the box, so keep that space clear.
@@ -215,13 +215,9 @@ The seller lists only the outside dimensions, so check every position against th
 Do this before soldering anything.
 
 1. Connect the board to the computer by USB. No battery yet. If a USB-C to USB-C cable doesn't power the board, use a USB-A to USB-C cable; some clones lack the resistors that USB-C chargers look for.
-2. Flash the generic ESP32 build of MicroPython from [micropython.org/download/ESP32_GENERIC](https://micropython.org/download/ESP32_GENERIC/) with `esptool`.
-3. Open the REPL, for example with `mpremote`, and check that the board responds:
-
-   ```python
-   import machine
-   machine.freq()
-   ```
+2. In the `device/` folder, run `just doctor` and fix what it reports. See [README.md](README.md#setup) for setting up the computer.
+3. Flash MicroPython with `just flash`. It shows the board's chip and MAC address, asks before erasing the board, and writes the release pinned in [micropython.toml](micropython.toml).
+4. Check that the board responds with `just bringup board`. See [Board](#board).
 
 ### 2. Check battery polarity
 
@@ -268,67 +264,78 @@ Fix the board and the battery, route the wires, add strain relief and plug the U
 
 ### 9. Run the bring-up tests
 
-See [Bring-up tests](#bring-up-tests). Close the lid only after every test passes.
+Run `just bringup` and answer its questions, then check power and charging by hand. See [Bring-up tests](#bring-up-tests). Close the lid only after every test passes.
 
 ## Bring-up tests
 
-Run these from the MicroPython REPL with the board connected over USB, through the panel socket. The battery doesn't have to be switched on.
+Run them with the board connected over USB, through the panel socket. The battery doesn't have to be switched on, except for the battery voltage test. In the `device/` folder:
+
+```bash
+just bringup
+```
+
+The run tests the board, the laser sensor, its distance readings and clear view, the LEDs, the buzzer and, if fitted, the battery divider. It verifies the board and the sensor by itself, and asks you to move your hand or aim the unit and to answer yes/no questions about what you see and hear. A failed test prints a hint and a link to its section below, and the run goes on with the next one. At the end it prints a summary, the notes the firmware needs and the tests still to do by hand.
+
+To run only some tests, name them, for example while wiring: `just bringup sensor leds`. The board test always runs first. The code of each test is in [board/bringup.py](board/bringup.py), which also says how to run a test by hand in the REPL.
+
+### Board
+
+The board answers over USB and prints its MicroPython version, CPU frequency and unique ID. The unique ID is also the board's MAC address, which tells units apart.
+
+- **The board doesn't respond:** run `just doctor`. A new board needs `just flash` first.
+- **It runs a different MicroPython version than the one pinned in [micropython.toml](micropython.toml):** run `just flash`.
 
 ### Laser sensor
 
-```python
-from machine import Pin, I2C
-import time
+The sensor answers at I2C address `0x29`, identifies itself as a VL53L1X (model ID `0xEACC` in 16-bit register `0x010F`), disappears from the bus while XSHUT is pulled low, and comes back when XSHUT is released.
 
-xshut = Pin(16, Pin.OPEN_DRAIN, value=1)   # released: sensor on
-time.sleep_ms(10)
-i2c = I2C(0, scl=Pin(18), sda=Pin(19), freq=400_000)
-print(i2c.scan())                          # expect [41], which is 0x29
-print(i2c.readfrom_mem(0x29, 0xC0, 1))     # expect b'\xee', the VL53L0X model ID
-
-xshut.value(0)                             # sensor off
-time.sleep_ms(10)
-print(i2c.scan())                          # expect []
-xshut.value(1)                             # sensor back on
-```
-
-- **Nothing found with XSHUT released, but the sensor appears once the XSHUT wire is disconnected:** the module has no pull-up on XSHUT. Add a 10 kΩ resistor from XSHUT to `3V`.
+- **Nothing found with XSHUT released:** the run tries again with the ESP32's weak internal pull-up on XSHUT. If the sensor then answers, the module has no pull-up on XSHUT. Add a 10 kΩ resistor from XSHUT to `3V`.
 - **Nothing found at all:** check `3V`, `GND`, and whether SCL and SDA are swapped.
+- **The sensor stays on with XSHUT low:** check the wire from pin `16` to XSHUT.
+- **The sensor is a VL53L0X:** VL53L0X modules have the same pins and answer at the same address, so the wiring tests pass. The run recognises one by its model ID, `0xEE` in register `0xC0`. Its registers and driver differ from the VL53L1X's, so replace the module.
 
-Distance readings need a VL53L0X driver, which isn't part of MicroPython. They're checked once the firmware exists.
+### Distance readings
+
+The run measures in short distance mode, about 20 times a second, and shows the distance on one line for 10 seconds while you move your hand in front of the sensor, between 5 and 50 cm. It then asks whether the readings followed your hand. A target nearer than 4 cm shows as "closer than 4 cm". Without a target in range, the line shows "no reading" and the sensor's reason.
+
+- **The readings don't change:** check that nothing covers the sensor chip: its protective film, glue, or the lid.
+
+To watch the readings for longer, for example while aiming a unit at the passage, run `just distance` and stop it with Ctrl-C. The driver is [board/lib/vl53l1x.py](board/lib/vl53l1x.py), see [ADR 0005](../doc/adr/0005-vl53l1x-driver.md).
+
+### Clear view
+
+When asked, point the sensor at open space, with nothing within 1.5 m. The run takes 20 measurements and passes if none sees a target closer than 1 m, including one too close to measure.
+
+- **It sees something close:** something sits in the sensor's 27° field of view, such as the edge of the aperture, glue, a wire or the chip's protective film. See [Openings in the standard box](#openings-in-the-standard-box).
 
 ### LEDs
 
-```python
-green = Pin(26, Pin.OUT, value=1)   # green on
-red = Pin(27, Pin.OUT, value=1)     # red on
-green.off(); red.off()
-```
+The run lights the green LED, then the red one, then both, and asks each time whether that is what you see.
+
+- **An LED stays dark:** check its wire (green to pin `26`, red to pin `27`), its 220 Ω resistor, and that its long leg, the anode, is on the resistor side.
+- **The green LED is much dimmer than the red one:** it is probably a 3 V type. Swap its resistor for 100 Ω.
 
 ### Buzzer
 
-```python
-buzzer = Pin(25, Pin.OUT, value=1)  # HIGH
-buzzer.value(0)                     # LOW
-buzzer.value(1)
-```
+The run sets pin `25` HIGH, then LOW, and asks each time whether the buzzer sounds. From the answers it tells which level sounds the buzzer.
 
-- On the usual low-triggered YL-44, LOW sounds the buzzer and HIGH silences it. If yours does the opposite, it's a high-triggered variant. Note that here, since the firmware has to know.
-- If the buzzer chirps or hums faintly while the board boots, add a 10 kΩ resistor from pin `25` to `3V`.
+- On the usual low-triggered YL-44, LOW sounds the buzzer and HIGH silences it. If yours does the opposite, it's a high-triggered variant. The run says so under "Note for the firmware". Note it down, since the firmware has to know.
+- **It sounds at both levels:** the YL-44 is probably powered from USB 5 V or the battery. Power it from `3V`, see [Signal wiring](#signal-wiring).
+- **It stays silent:** check the YL-44's `VCC` (splice S1), `GND` (splice S3) and `I/O` (pin `25`).
+- **It chirps or hums faintly while the board boots:** add a 10 kΩ resistor from pin `25` to `3V`.
 
 ### Battery voltage (optional)
 
-Switch the unit on with the battery connected.
+Only for units with the battery divider. The full run asks whether it is fitted; `just bringup battery` doesn't ask. When the run asks, connect the battery and switch the unit on.
 
-```python
-from machine import ADC
-adc = ADC(Pin(35), atten=ADC.ATTN_11DB)
-print(adc.read_uv() * 2 / 1_000_000)  # battery voltage in V, about 3.0–4.2
-```
+The run reads the battery voltage on pin `35`, which should be about 3.0–4.2 V. It then asks for a multimeter reading across the battery and prints the offset between the two. Note the offset down.
 
-Compare it with a multimeter reading across the battery and note any offset.
+- **About 0 V:** check that the unit is switched on and that the top of the divider is wired to the switch's `LED +` terminal.
+- **Outside 3.0–4.2 V:** check both 100 kΩ resistors.
 
 ### Power and charging
+
+These can't be tested over USB, so check them by hand:
 
 1. Unplug USB and switch on. The ring lights, and the board's `3V` pin reads about 3.3 V.
 2. Plug in USB with the switch on. The board's charge LED lights while the battery charges.
@@ -340,12 +347,12 @@ Compare it with a multimeter reading across the battery and note any offset.
 - **The ring may glow when switched off.** With the switch off and USB connected, the ring can glow, because the charger drives the empty battery terminal. This is expected.
 - **Battery life.** With the radio and the sensor running continuously, expect roughly 15–25 hours from a full charge. Charging from empty takes about 4–5 hours at the charger's 400 mA. Both are estimates; measure them and record the results here.
 - **Indoor use only.** The sensor aperture is open, so the unit must stay out of rain.
-- **Sensor range.** The VL53L0X reads reliably from a few centimetres to about 1.2 m indoors. Dark or glossy paint weakens the signal, and readings closer than about 3 cm are unreliable.
+- **Sensor range.** In short distance mode, the VL53L1X reaches about 1.3 m, even in strong ambient light. Long distance mode reaches up to 3.6 m in the dark, but only about 0.7 m in strong light. Dark or glossy paint weakens the signal. Below 4 cm, the sensor still detects a target, but the distance isn't accurate.
 
 ## Notes for the firmware
 
 - Set pin `25` to the buzzer's "silent" level as early as possible at start-up.
-- Drive `16` (XSHUT) open-drain. Never push it high, since the sensor's own logic runs at 2.8 V.
+- Drive `16` (XSHUT) open-drain. Never push it high, since a module may run the sensor's logic at 2.8 V.
 - Read `17` (GPIO1) with the internal pull-up enabled.
 - Treat battery monitoring as optional and configurable, because units without the divider read nothing useful on pin `35`.
 - Store which side of the passage the unit is on as a setting. The hardware is the same for both sides.

@@ -10,7 +10,8 @@ The repository has three top-level areas. Put every file in the one it belongs t
 
 Everything needed to build the physical device that is installed at the passage:
 
-- Firmware and device-side code (the prototype targets an ESP32 with MicroPython)
+- Code that runs on the board, in MicroPython on an ESP32, in `device/board/`. The firmware goes in `device/board/firmware/`, and libraries it shares with the bring-up checks, such as the sensor driver, in `device/board/lib/`
+- Code that runs on the computer to flash and test the board, in `device/host/`, run as `just` tasks from `device/`. [device/README.md](device/README.md) covers the setup and the tasks
 - Wiring diagrams, schematics and pin assignments
 - Bill of materials and parts lists
 - Enclosure designs (CAD files, 3D-print models, drawings)
@@ -44,8 +45,10 @@ Documentation that only concerns one side stays next to that side, in `device/` 
 - Shared documentation and architecture decisions go in `doc/`. Anything shared by both sides, such as the communication protocol between device and phone, is documented once there and referenced from `device/` and `app/` rather than copied.
 - Record significant design choices (hardware selection, communication method, app platform) as an ADR in `doc/adr/`.
 - Ask before creating any other top-level directory.
-- Keep the repository root for project-level files only: `README.md`, `AGENTS.md`, `LICENSE` and similar.
+- Keep the repository root for project-level files only: `README.md`, `AGENTS.md`, `LICENSE`, the VS Code workspace `safe-driveway.code-workspace` and similar. When `app/` gets code, add it to the workspace as a folder of its own.
+- Add every device task to `device/justfile` as a `just` task. Set the MicroPython version only in `device/micropython.toml`.
+- Run `just lint` in `device/` before finishing a change to device code.
 - The project is licensed under the license in [LICENSE](LICENSE). Do not modify it.
 - Keep documentation up to date. Update the affected docs in the same change as the code, hardware or design they describe, never as a later follow-up. This covers [README.md](README.md), the files in `doc/`, and the documentation in `device/` and `app/`, and includes this file when the repository layout or rules change.
 - If a change contradicts an accepted ADR, add a new ADR that supersedes it instead of leaving the old one stale.
-- Before finishing a task, check whether any documentation mentions what you changed (hardware list, pin assignments, protocol, setup steps) and fix what no longer matches.
+- Before finishing a task, check whether any documentation mentions what you changed (hardware list, pin assignments, protocol, setup steps) and fix what no longer matches. Pin assignments and the expected sensor also live in the bring-up checks, `device/board/bringup.py` and `device/host/bringup.py`.

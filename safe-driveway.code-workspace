@@ -1,0 +1,38 @@
+{
+  // Open this file in VS Code (File > Open Workspace from File...).
+  //
+  // Each folder gets its own Python settings. "device" holds the host tools,
+  // which run on the computer in the uv environment device/.venv. "device/board"
+  // holds the code that runs on the ESP32; device/board/pyrightconfig.json checks
+  // it against the MicroPython stubs from `just stubs`.
+  "folders": [
+    { "name": "Safe Driveway", "path": "." },
+    { "name": "device", "path": "device" },
+    { "name": "device/board (MicroPython)", "path": "device/board" }
+  ],
+  "settings": {
+    // device/ and device/board/ are folders of their own above, so hide them
+    // inside their parents to show every file once.
+    "files.exclude": {
+      "device": true,
+      "board": true,
+      ".venv": true,
+      ".cache": true,
+      ".stubs": true,
+      ".ruff_cache": true,
+      "**/__pycache__": true
+    },
+    "[python]": {
+      "editor.defaultFormatter": "charliermarsh.ruff",
+      "editor.formatOnSave": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "charliermarsh.ruff",
+      "nefrob.vscode-just-syntax"
+    ]
+  }
+}

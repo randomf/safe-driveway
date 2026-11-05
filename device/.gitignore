@@ -1,0 +1,14 @@
+# Created by uv: the Python environment with mpremote, esptool and ruff
+.venv/
+
+# Downloaded MicroPython images (just flash)
+.cache/
+
+# MicroPython type stubs (just stubs)
+.stubs/
+.stubs.new/
+
+# Python and ruff caches
+__pycache__/
+*.py[cod]
+.ruff_cache/
