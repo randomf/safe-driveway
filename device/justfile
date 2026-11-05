@@ -18,12 +18,17 @@ doctor:
 flash *args:
     @uv run python -m host.flash {{ args }}
 
-# Open the MicroPython REPL on the board (leave with Ctrl-] or Ctrl-X)
+# Open the MicroPython REPL on the board with board/ mounted (leave with Ctrl-] or Ctrl-X)
 [no-exit-message]
 repl:
     @uv run python -m host.repl
 
-# Run the guided bring-up test: all checks, or only those named (board sensor leds buzzer battery)
+# Show the distance the sensor measures, live, until Ctrl-C
+[no-exit-message]
+distance:
+    @uv run python -m host.distance
+
+# Run the guided bring-up test: all checks, or only those named (board sensor distance view leds buzzer battery)
 [no-exit-message]
 bringup *checks:
     @uv run python -m host.bringup {{ checks }}

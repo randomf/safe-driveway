@@ -1,9 +1,12 @@
-"""Open the MicroPython REPL on the board. Leave it with Ctrl-] or Ctrl-X."""
+"""Open the MicroPython REPL on the board, with ../board/ mounted. Leave with Ctrl-] or Ctrl-X.
+
+In the REPL, `from bringup import *` loads the bring-up checks and the sensor driver.
+"""
 
 import subprocess
 import sys
 
-from host import console, ports
+from host import board, console, ports
 
 
 def main() -> int:
@@ -11,9 +14,8 @@ def main() -> int:
         port = ports.find_port()
     except ports.PortError as e:
         console.fail(str(e))
-    return subprocess.run(
-        [sys.executable, "-m", "mpremote", "connect", port, "repl"], check=False
-    ).returncode
+    command = ["connect", port, "mount", str(board.BOARD_DIR), "exec", board.LIB_PATH, "repl"]
+    return subprocess.run([sys.executable, "-m", "mpremote", *command], check=False).returncode
 
 
 if __name__ == "__main__":

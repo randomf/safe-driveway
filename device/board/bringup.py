@@ -1,11 +1,14 @@
 """Bring-up checks for a prototype unit. Runs on the board, in MicroPython.
 
-`just bringup` sends this file to the board's RAM, calls the functions below one
-at a time and asks the person at the computer about what only they can see or
-hear. Nothing is written to the board's filesystem.
+`just bringup` mounts this folder on the board, imports this file into the
+board's RAM, calls the functions below one at a time and asks the person at the
+computer about what only they can see or hear. Nothing is written to the
+board's filesystem. The sensor driver comes from lib/, which the computer puts
+on the import path, as /lib is on the board.
 
-To run a check by hand, open the REPL with `just repl`, press Ctrl-E, paste this
-file, press Ctrl-D, and call the functions yourself, for example `sensor()`.
+To run a check by hand, open the REPL with `just repl`, which mounts this folder
+the same way, then `from bringup import *` and call the functions yourself, for
+example `sensor()` or `live(None)`.
 
 Pins and expected results: ../prototype-assembly.md, sections "Pin assignments"
 and "Bring-up tests".
@@ -16,6 +19,7 @@ import time
 
 import machine
 from machine import ADC, I2C, Pin
+from vl53l1x import VL53L1X, status_text
 
 SCL = 18
 SDA = 19
@@ -86,6 +90,38 @@ def sensor():
         "found_while_off": found_while_off,
         "found_with_pull_up": found_with_pull_up,
     }
+
+
+def _ranging():
+    """The VL53L1X, measuring continuously in short distance mode, 20 times a second."""
+    _xshut(released=True)
+    tof = VL53L1X(I2C(0, scl=Pin(SCL), sda=Pin(SDA), freq=400_000), SENSOR)
+    tof.configure(short=True, timing_budget_ms=50)
+    tof.start()
+    return tof
+
+
+def live(seconds=10):
+    """Show the distance on one line as it changes, for `seconds`, or until Ctrl-C with None."""
+    tof = _ranging()
+    start = time.ticks_ms()
+    try:
+        while seconds is None or time.ticks_diff(time.ticks_ms(), start) < seconds * 1000:
+            distance, status = tof.read()
+            text = f"{distance} mm" if status == 0 else f"no target ({status_text(status)})"
+            print(f"\r  {text:<36}", end="")
+    finally:
+        tof.stop()
+        print()
+
+
+def clear_view(samples=20):
+    """Measurements with nothing in front of the sensor: a list of (distance in mm, status)."""
+    tof = _ranging()
+    try:
+        return [tof.read() for _ in range(samples)]
+    finally:
+        tof.stop()
 
 
 def leds(green, red):

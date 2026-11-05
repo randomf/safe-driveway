@@ -16,7 +16,6 @@ from typing import Any
 
 from host import board, console, ports, release
 
-BOARD_CODE = release.DEVICE_DIR / "board" / "bringup.py"
 DOC = "prototype-assembly.md"
 
 # The distance sensor in the parts list, see ../../doc/adr/0004-vl53l1x-distance-sensor.md.
@@ -41,6 +40,10 @@ class Unit:
 
     def call(self, expression: str) -> Any:
         return self.transport.eval(expression)
+
+    def show(self, expression: str) -> None:
+        """Run an expression on the board, showing its output as it comes."""
+        self.transport.exec(expression, data_consumer=console.stream)
 
 
 def ok(detail: str, note: str = "") -> Result:
@@ -94,6 +97,41 @@ def check_sensor(unit: Unit) -> Result:
             "Its registers and driver differ, so the firmware has to match the fitted sensor.",
         )
     return ok(f"{r['chip']} at 0x29, model ID 0x{r['model_id']:02x}, XSHUT switches it off and on")
+
+
+def check_distance(unit: Unit) -> Result:
+    if not console.interactive():
+        return nobody()
+    input(
+        "  Press Enter, then move your hand in front of the sensor, between 5 and 50 cm, "
+        "for 10 seconds. "
+    )
+    unit.show("live(10)")
+    if console.ask("Did the readings follow your hand?"):
+        return ok("the readings follow a moving target")
+    return failed(
+        "The readings didn't follow the target.",
+        "Check that nothing covers the sensor chip: its protective film, glue, or the lid.",
+    )
+
+
+# With nothing within 1.5 m, short distance mode should see no target closer than this.
+CLEAR_VIEW_MM = 1000
+
+
+def check_view(unit: Unit) -> Result:
+    if not console.interactive():
+        return nobody()
+    input("  Point the sensor at open space, with nothing within 1.5 m, then press Enter. ")
+    readings = unit.call("clear_view()")
+    seen = sorted(d for d, status in readings if status == 0 and d < CLEAR_VIEW_MM)
+    if not seen:
+        return ok(f"nothing seen within {CLEAR_VIEW_MM // 10} cm in {len(readings)} measurements")
+    return failed(
+        f"With nothing in front, the sensor sees something at {seen[0]}–{seen[-1]} mm.",
+        "Something sits in its 27° field of view: the edge of the aperture, glue, a wire, "
+        "or the chip's protective film.",
+    )
 
 
 LED_STEPS = [
@@ -194,6 +232,8 @@ def check_battery(unit: Unit) -> Result:
 CHECKS: dict[str, tuple[Callable[[Unit], Result], str, str]] = {
     "board": (check_board, "board", ""),
     "sensor": (check_sensor, "laser-sensor", ""),
+    "distance": (check_distance, "distance-readings", "Live readings from the sensor."),
+    "view": (check_view, "clear-view", "Nothing in the sensor's field of view."),
     "leds": (check_leds, "leds", "Watch the LEDs on wall A."),
     "buzzer": (check_buzzer, "buzzer", "Listen to the buzzer."),
     "battery": (check_battery, "battery-voltage-optional", ""),
@@ -207,10 +247,20 @@ def show(name: str, anchor: str, result: Result) -> None:
             print(f"  {'':<8} {hint}")
 
 
+# Checks that need another one to have passed, when it ran.
+REQUIRES = {"distance": "sensor", "view": "sensor"}
+
+
 def run(unit: Unit, names: list[str]) -> list[tuple[str, Result]]:
     results = []
     for name in names:
         check, anchor, intro = CHECKS[name]
+        required = REQUIRES.get(name)
+        if any(n == required and r.status == console.FAIL for n, r in results):
+            result = Result(console.SKIP, f"needs the {required} check to pass first")
+            show(name, anchor, result)
+            results.append((name, result))
+            continue
         if intro and console.interactive():
             print(f"  {name:<8} {intro}")
         try:
@@ -259,7 +309,7 @@ def main() -> int:
     print(f"Bring-up test on {port}\n")
     try:
         with board.connect(port) as transport:
-            transport.exec(BOARD_CODE.read_bytes())
+            board.load_board_code(transport)
             unit = Unit(transport, named=set(args.checks))
             try:
                 results = run(unit, names)

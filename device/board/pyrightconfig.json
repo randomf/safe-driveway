@@ -1,6 +1,6 @@
 {
   "typeshedPath": "../.stubs",
-  "extraPaths": ["../.stubs"],
+  "extraPaths": ["../.stubs", "lib"],
   "typeCheckingMode": "standard",
   "reportMissingModuleSource": false
 }

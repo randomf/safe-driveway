@@ -28,6 +28,12 @@ def ask(question: str, default: bool | None = None) -> bool | None:
             return default
 
 
+def stream(data: bytes) -> None:
+    """Pass the board's output through as it arrives."""
+    sys.stdout.buffer.write(data)
+    sys.stdout.flush()
+
+
 def fail(message: str) -> NoReturn:
     sys.stdout.flush()
     print(f"{FAIL} {message}", file=sys.stderr)

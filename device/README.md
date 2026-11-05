@@ -7,7 +7,7 @@ This folder holds everything needed to build the remote device that is installed
 | [prototype-assembly.md](prototype-assembly.md) | Parts, wiring, assembly and bring-up tests of the prototype unit |
 | [justfile](justfile) | The tasks listed under [Tasks](#tasks) |
 | [host/](host/) | Code that runs on the computer: flashing, `doctor` and the guided bring-up test |
-| [board/](board/) | Code that runs on the board, in MicroPython. The firmware will go in `board/firmware/` |
+| [board/](board/) | Code that runs on the board, in MicroPython: the bring-up checks, and in [board/lib/](board/lib/) libraries such as the VL53L1X sensor driver. The firmware will go in `board/firmware/` |
 | [micropython.toml](micropython.toml) | The MicroPython release that every unit runs |
 | `pyproject.toml`, `uv.lock`, `.python-version` | The Python environment for the code in `host/` |
 
@@ -60,8 +60,9 @@ Run the tasks from the `device/` folder or any folder below it. `just` on its ow
 |---|---|
 | `just doctor` | Checks that this computer is ready to work with the board, and says how to fix what isn't |
 | `just flash` | Shows the board's chip and MAC address, asks before erasing it, writes the MicroPython release from [micropython.toml](micropython.toml) and checks that it starts. `--yes` skips the question; a file name writes that image instead |
-| `just repl` | Opens the MicroPython REPL on the board. Leave it with Ctrl-] or Ctrl-X |
-| `just bringup` | Runs the guided bring-up test, see [Testing a unit](#testing-a-unit). Name checks to run only those: `board`, `sensor`, `leds`, `buzzer`, `battery` |
+| `just repl` | Opens the MicroPython REPL on the board, with `board/` mounted so that `from bringup import *` loads the checks and the sensor driver. Leave it with Ctrl-] or Ctrl-X |
+| `just distance` | Shows the distance the sensor measures, live, until Ctrl-C |
+| `just bringup` | Runs the guided bring-up test, see [Testing a unit](#testing-a-unit). Name checks to run only those: `board`, `sensor`, `distance`, `view`, `leds`, `buzzer`, `battery` |
 | `just stubs` | Installs the MicroPython type stubs that editors use for the code in `board/` |
 | `just lint` | Checks the code with ruff, without changing anything |
 | `just fmt` | Formats the code and fixes what ruff can fix by itself |
@@ -78,7 +79,7 @@ PORT=/dev/ttyUSB1 just bringup
 - **While wiring:** test each part as soon as it's connected, for example `just bringup sensor` or `just bringup leds buzzer`.
 - **The finished unit** (step 9): `just bringup`, then the power and charging checks by hand.
 
-The board and sensor checks run by themselves. For the LEDs and the buzzer, the run asks you what you see and hear. It goes on after a failed check, and ends with a summary, any notes the firmware needs (such as the buzzer's polarity) and the checks still to do by hand. The exit code is non-zero if any check failed.
+The board and sensor checks run by themselves. For the distance readings and the sensor's clear view, the run asks you to move your hand or aim the unit; for the LEDs and the buzzer, it asks what you see and hear. It goes on after a failed check, and ends with a summary, any notes the firmware needs (such as the buzzer's polarity) and the checks still to do by hand. The exit code is non-zero if any check failed.
 
 ```
 Bring-up test on /dev/ttyUSB0
@@ -90,7 +91,7 @@ Bring-up test on /dev/ttyUSB0
   …
 ```
 
-What each check expects, and what to do when one fails, is in [Bring-up tests](prototype-assembly.md#bring-up-tests). The checks themselves are in [board/bringup.py](board/bringup.py), and the code that runs them from the computer is in [host/bringup.py](host/bringup.py). Nothing is written to the board's filesystem.
+What each check expects, and what to do when one fails, is in [Bring-up tests](prototype-assembly.md#bring-up-tests). The checks themselves are in [board/bringup.py](board/bringup.py), and the code that runs them from the computer is in [host/bringup.py](host/bringup.py). The run mounts `board/` on the board over USB and imports the checks into its RAM, so nothing is written to the board's filesystem.
 
 ## Editing the code
 

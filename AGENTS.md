@@ -10,7 +10,7 @@ The repository has three top-level areas. Put every file in the one it belongs t
 
 Everything needed to build the physical device that is installed at the passage:
 
-- Code that runs on the board, in MicroPython on an ESP32, in `device/board/`. The firmware goes in `device/board/firmware/`
+- Code that runs on the board, in MicroPython on an ESP32, in `device/board/`. The firmware goes in `device/board/firmware/`, and libraries it shares with the bring-up checks, such as the sensor driver, in `device/board/lib/`
 - Code that runs on the computer to flash and test the board, in `device/host/`, run as `just` tasks from `device/`. [device/README.md](device/README.md) covers the setup and the tasks
 - Wiring diagrams, schematics and pin assignments
 - Bill of materials and parts lists

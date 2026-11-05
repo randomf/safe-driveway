@@ -8,13 +8,23 @@ from contextlib import contextmanager, redirect_stdout
 from mpremote.transport import TransportError, TransportExecError
 from mpremote.transport_serial import SerialTransport
 
+from host import release
+
 __all__ = [
+    "BOARD_DIR",
     "SerialTransport",
     "TransportError",
     "TransportExecError",
     "connect",
+    "load_board_code",
     "micropython_version",
 ]
+
+BOARD_DIR = release.DEVICE_DIR / "board"
+
+# Run on the board after mounting BOARD_DIR, which mpremote mounts at /remote.
+# Puts its lib/ on the import path, as /lib is on the board's own.
+LIB_PATH = "import sys; sys.path.append('/remote/lib')"
 
 
 def _open(port: str, attempts: int) -> SerialTransport:
@@ -46,9 +56,17 @@ def connect(port: str, attempts: int = 1) -> Iterator[SerialTransport]:
         yield transport
     finally:
         try:
+            if transport.mounted:
+                transport.umount_local()
             transport.exit_raw_repl()
         finally:
             transport.close()
+
+
+def load_board_code(transport: SerialTransport) -> None:
+    """Mount ../board/ on the board and import its bring-up checks into RAM."""
+    transport.mount_local(str(BOARD_DIR))
+    transport.exec(f"{LIB_PATH}\nfrom bringup import *")
 
 
 def micropython_version(transport: SerialTransport) -> str:

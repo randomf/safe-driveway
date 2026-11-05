@@ -274,7 +274,7 @@ Run them with the board connected over USB, through the panel socket. The batter
 just bringup
 ```
 
-The run tests the board, the laser sensor, the LEDs, the buzzer and, if fitted, the battery divider. It verifies the board and the sensor by itself and asks yes/no questions about what you see and hear. A failed test prints a hint and a link to its section below, and the run goes on with the next one. At the end it prints a summary, the notes the firmware needs and the tests still to do by hand.
+The run tests the board, the laser sensor, its distance readings and clear view, the LEDs, the buzzer and, if fitted, the battery divider. It verifies the board and the sensor by itself, and asks you to move your hand or aim the unit and to answer yes/no questions about what you see and hear. A failed test prints a hint and a link to its section below, and the run goes on with the next one. At the end it prints a summary, the notes the firmware needs and the tests still to do by hand.
 
 To run only some tests, name them, for example while wiring: `just bringup sensor leds`. The board test always runs first. The code of each test is in [board/bringup.py](board/bringup.py), which also says how to run a test by hand in the REPL.
 
@@ -294,7 +294,19 @@ The sensor answers at I2C address `0x29`, identifies itself as a VL53L1X (model 
 - **The sensor stays on with XSHUT low:** check the wire from pin `16` to XSHUT.
 - **The sensor is a VL53L0X:** VL53L0X modules have the same pins and answer at the same address, so the wiring tests pass. The run recognises one by its model ID, `0xEE` in register `0xC0`. Its registers and driver differ from the VL53L1X's, so replace the module.
 
-Distance readings need a VL53L1X driver, which isn't part of MicroPython. They're checked once the firmware exists.
+### Distance readings
+
+The run measures in short distance mode, about 20 times a second, and shows the distance on one line for 10 seconds while you move your hand in front of the sensor, between 5 and 50 cm. It then asks whether the readings followed your hand. Without a target in range, the line shows "no target" and the sensor's reason.
+
+- **The readings don't change:** check that nothing covers the sensor chip: its protective film, glue, or the lid.
+
+To watch the readings for longer, for example while aiming a unit at the passage, run `just distance` and stop it with Ctrl-C. The driver is [board/lib/vl53l1x.py](board/lib/vl53l1x.py), see [ADR 0005](../doc/adr/0005-vl53l1x-driver.md).
+
+### Clear view
+
+When asked, point the sensor at open space, with nothing within 1.5 m. The run takes 20 measurements and passes if none sees a target closer than 1 m.
+
+- **It sees something close:** something sits in the sensor's 27° field of view, such as the edge of the aperture, glue, a wire or the chip's protective film. See [Openings in the standard box](#openings-in-the-standard-box).
 
 ### LEDs
 
@@ -335,7 +347,7 @@ These can't be tested over USB, so check them by hand:
 - **The ring may glow when switched off.** With the switch off and USB connected, the ring can glow, because the charger drives the empty battery terminal. This is expected.
 - **Battery life.** With the radio and the sensor running continuously, expect roughly 15–25 hours from a full charge. Charging from empty takes about 4–5 hours at the charger's 400 mA. Both are estimates; measure them and record the results here.
 - **Indoor use only.** The sensor aperture is open, so the unit must stay out of rain.
-- **Sensor range.** In short distance mode, the VL53L1X reaches about 1.3 m, even in strong ambient light. Long distance mode reaches up to 3.6 m in the dark, but only about 0.7 m in strong light. Dark or glossy paint weakens the signal, and readings within the first few centimetres are unreliable. Measure the shortest reliable distance and record it here.
+- **Sensor range.** In short distance mode, the VL53L1X reaches about 1.3 m, even in strong ambient light. Long distance mode reaches up to 3.6 m in the dark, but only about 0.7 m in strong light. Dark or glossy paint weakens the signal. Below 4 cm, the sensor still detects a target, but the distance isn't accurate.
 
 ## Notes for the firmware
 
