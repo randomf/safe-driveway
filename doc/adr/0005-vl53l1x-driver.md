@@ -22,4 +22,4 @@ The driver is [device/board/lib/vl53l1x.py](../../device/board/lib/vl53l1x.py), 
 
 - The driver is ours to maintain. Features the ULD has and the driver lacks, such as offset and crosstalk calibration, the region of interest and distance thresholds, get added from the same source when the firmware needs them.
 - ST's notice stays in the file, and anything copied from the ULD later goes under it.
-- `just bringup` and `just repl` mount `device/board/` on the board and put its `lib/` on the import path, so the checks import the driver the same way the firmware will.
+- The checks import the driver by name, the same way the firmware will. `just bringup` and `just distance` send it into the board's RAM as a module; `just repl` mounts `device/board/`, and the checks add its `lib/` to the import path.

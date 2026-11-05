@@ -28,7 +28,14 @@ def pinned_firmware(rel: release.Release) -> Path:
         print(f"Downloading {rel.url}")
         path.parent.mkdir(parents=True, exist_ok=True)
         partial = path.with_suffix(".part")
-        urllib.request.urlretrieve(rel.url, partial)
+        try:
+            urllib.request.urlretrieve(rel.url, partial)
+        except OSError as e:  # URLError and HTTPError are OSErrors
+            partial.unlink(missing_ok=True)
+            console.fail(
+                f"Couldn't download MicroPython ({getattr(e, 'reason', e)}). Check the internet "
+                "connection, or pass a firmware file you already have: `just flash FILE`."
+            )
         partial.rename(path)
     digest = sha256(path)
     if digest != rel.sha256:
@@ -57,10 +64,7 @@ def main() -> int:
     args = parser.parse_args()
 
     rel = release.load()
-    try:
-        port = ports.find_port()
-    except ports.PortError as e:
-        console.fail(str(e))
+    port = ports.require_port()
 
     if args.firmware:
         if not args.firmware.is_file():

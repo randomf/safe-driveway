@@ -50,7 +50,7 @@ macOS may already have a driver for the CH340; the port then appears as `/dev/cu
 
 ### Serial port on Windows (untested)
 
-Windows usually installs the CH340 driver by itself through Windows Update. If the board doesn't show up under *Ports (COM & LPT)* in Device Manager, install the driver from [WCH](https://www.wch-ic.com/downloads/CH341SER_EXE.html). The tasks run in PowerShell, where you choose a port with `$env:PORT = "COM5"`.
+Windows usually installs the CH340 driver by itself through Windows Update. If the board doesn't show up under *Ports (COM & LPT)* in Device Manager, install the driver from [WCH](https://www.wch-ic.com/downloads/CH341SER_EXE.html). The tasks run in PowerShell, where you choose a port with `$env:DEVICE_PORT = "COM5"`. A firmware file for `just flash` can't have spaces in its path there.
 
 ## Tasks
 
@@ -60,17 +60,17 @@ Run the tasks from the `device/` folder or any folder below it. `just` on its ow
 |---|---|
 | `just doctor` | Checks that this computer is ready to work with the board, and says how to fix what isn't |
 | `just flash` | Shows the board's chip and MAC address, asks before erasing it, writes the MicroPython release from [micropython.toml](micropython.toml) and checks that it starts. `--yes` skips the question; a file name writes that image instead |
-| `just repl` | Opens the MicroPython REPL on the board, with `board/` mounted so that `from bringup import *` loads the checks and the sensor driver. Leave it with Ctrl-] or Ctrl-X |
+| `just repl` | Opens the MicroPython REPL on the board, with `board/` mounted as the current directory, so that `from bringup import *` loads the checks and they find the sensor driver. Leave it with Ctrl-] or Ctrl-X |
 | `just distance` | Shows the distance the sensor measures, live, until Ctrl-C |
 | `just bringup` | Runs the guided bring-up test, see [Testing a unit](#testing-a-unit). Name checks to run only those: `board`, `sensor`, `distance`, `view`, `leds`, `buzzer`, `battery` |
 | `just stubs` | Installs the MicroPython type stubs that editors use for the code in `board/` |
 | `just lint` | Checks the code with ruff, without changing anything |
 | `just fmt` | Formats the code and fixes what ruff can fix by itself |
 
-The serial port is found automatically. When more than one USB serial port is connected, the tasks stop and list them; choose one with `PORT`:
+The serial port is found automatically. When more than one USB serial port is connected, the tasks stop and list them; choose one with `DEVICE_PORT`:
 
 ```bash
-PORT=/dev/ttyUSB1 just bringup
+DEVICE_PORT=/dev/ttyUSB1 just bringup
 ```
 
 ## Testing a unit
@@ -91,7 +91,7 @@ Bring-up test on /dev/ttyUSB0
   …
 ```
 
-What each check expects, and what to do when one fails, is in [Bring-up tests](prototype-assembly.md#bring-up-tests). The checks themselves are in [board/bringup.py](board/bringup.py), and the code that runs them from the computer is in [host/bringup.py](host/bringup.py). The run mounts `board/` on the board over USB and imports the checks into its RAM, so nothing is written to the board's filesystem.
+What each check expects, and what to do when one fails, is in [Bring-up tests](prototype-assembly.md#bring-up-tests). The checks themselves are in [board/bringup.py](board/bringup.py), and the code that runs them from the computer is in [host/bringup.py](host/bringup.py). The run sends the checks and the sensor driver into the board's RAM, so nothing is written to the board's filesystem.
 
 ## Editing the code
 

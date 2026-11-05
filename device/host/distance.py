@@ -6,24 +6,21 @@ from host import board, console, ports
 
 
 def main() -> int:
-    try:
-        port = ports.find_port()
-    except ports.PortError as e:
-        console.fail(str(e))
+    port = ports.require_port()
     try:
         with board.connect(port) as transport:
             board.load_board_code(transport)
             print("Distance from the sensor in short distance mode. Stop with Ctrl-C.")
-            transport.exec_raw_no_follow("live(None)")
-            try:
-                transport.follow(timeout=None, data_consumer=console.stream)
-            except KeyboardInterrupt:
-                # Stop the loop on the board too; it stops the sensor on its way out.
-                transport.serial.write(b"\x03")
-                transport.follow(timeout=5)
-                print()
+            board.run(transport, "live(None)", data_consumer=console.stream, timeout=None)
+    except KeyboardInterrupt:
+        print()
+        return 0
+    except board.TransportExecError as e:
+        console.fail(
+            f"The board raised {board.error_line(e)}. Run `just bringup sensor` to check the sensor."
+        )
     except board.TransportError as e:
-        console.fail(f"The board doesn't respond ({e}). Run `just doctor`.")
+        board.fail_unresponsive(e)
     return 0
 
 

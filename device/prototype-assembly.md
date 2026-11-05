@@ -296,7 +296,7 @@ The sensor answers at I2C address `0x29`, identifies itself as a VL53L1X (model 
 
 ### Distance readings
 
-The run measures in short distance mode, about 20 times a second, and shows the distance on one line for 10 seconds while you move your hand in front of the sensor, between 5 and 50 cm. It then asks whether the readings followed your hand. Without a target in range, the line shows "no target" and the sensor's reason.
+The run measures in short distance mode, about 20 times a second, and shows the distance on one line for 10 seconds while you move your hand in front of the sensor, between 5 and 50 cm. It then asks whether the readings followed your hand. A target nearer than 4 cm shows as "closer than 4 cm". Without a target in range, the line shows "no reading" and the sensor's reason.
 
 - **The readings don't change:** check that nothing covers the sensor chip: its protective film, glue, or the lid.
 
@@ -304,7 +304,7 @@ To watch the readings for longer, for example while aiming a unit at the passage
 
 ### Clear view
 
-When asked, point the sensor at open space, with nothing within 1.5 m. The run takes 20 measurements and passes if none sees a target closer than 1 m.
+When asked, point the sensor at open space, with nothing within 1.5 m. The run takes 20 measurements and passes if none sees a target closer than 1 m, including one too close to measure.
 
 - **It sees something close:** something sits in the sensor's 27° field of view, such as the edge of the aperture, glue, a wire or the chip's protective film. See [Openings in the standard box](#openings-in-the-standard-box).
 

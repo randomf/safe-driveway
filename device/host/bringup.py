@@ -39,11 +39,11 @@ class Unit:
         self.buzzer_silent: int | None = None  # the level that silences it, once the check knows
 
     def call(self, expression: str) -> Any:
-        return self.transport.eval(expression)
+        return board.evaluate(self.transport, expression)
 
     def show(self, expression: str) -> None:
         """Run an expression on the board, showing its output as it comes."""
-        self.transport.exec(expression, data_consumer=console.stream)
+        board.run(self.transport, expression, data_consumer=console.stream)
 
 
 def ok(detail: str, note: str = "") -> Result:
@@ -102,9 +102,9 @@ def check_sensor(unit: Unit) -> Result:
 def check_distance(unit: Unit) -> Result:
     if not console.interactive():
         return nobody()
-    input(
-        "  Press Enter, then move your hand in front of the sensor, between 5 and 50 cm, "
-        "for 10 seconds. "
+    console.prompt(
+        "Press Enter, then move your hand in front of the sensor, between 5 and 50 cm, "
+        "for 10 seconds."
     )
     unit.show("live(10)")
     if console.ask("Did the readings follow your hand?"):
@@ -122,11 +122,13 @@ CLEAR_VIEW_MM = 1000
 def check_view(unit: Unit) -> Result:
     if not console.interactive():
         return nobody()
-    input("  Point the sensor at open space, with nothing within 1.5 m, then press Enter. ")
-    readings = unit.call("clear_view()")
-    seen = sorted(d for d, status in readings if status == 0 and d < CLEAR_VIEW_MM)
+    console.prompt("Point the sensor at open space, with nothing within 1.5 m, then press Enter.")
+    r = unit.call(f"clear_view({CLEAR_VIEW_MM})")
+    seen = sorted(r["seen"])
     if not seen:
-        return ok(f"nothing seen within {CLEAR_VIEW_MM // 10} cm in {len(readings)} measurements")
+        return ok(
+            f"nothing seen within {CLEAR_VIEW_MM // 10} cm in {r['measurements']} measurements"
+        )
     return failed(
         f"With nothing in front, the sensor sees something at {seen[0]}–{seen[-1]} mm.",
         "Something sits in its 27° field of view: the edge of the aperture, glue, a wire, "
@@ -207,7 +209,7 @@ def check_battery(unit: Unit) -> Result:
             return Result(console.SKIP, "no battery divider fitted")
     if not console.interactive():
         return nobody()
-    input("  Connect the battery and switch the unit on, then press Enter. ")
+    console.prompt("Connect the battery and switch the unit on, then press Enter.")
     volts = unit.call("battery()")
     if volts < 0.5:
         return failed(
@@ -217,7 +219,7 @@ def check_battery(unit: Unit) -> Result:
     if not 2.9 <= volts <= 4.3:
         return failed(f"{volts:.2f} V is outside 3.0–4.2 V.", "Check both 100 kΩ resistors.")
     detail = f"{volts:.2f} V"
-    reading = input("  Your multimeter reading across the battery in V (Enter to skip): ")
+    reading = console.prompt("Your multimeter reading across the battery in V (Enter to skip):")
     try:
         offset = volts - float(reading.replace(",", "."))
     except ValueError:
@@ -266,7 +268,7 @@ def run(unit: Unit, names: list[str]) -> list[tuple[str, Result]]:
         try:
             result = check(unit)
         except board.TransportExecError as e:
-            result = failed(f"The board raised {e.error_output.strip().splitlines()[-1]}")
+            result = failed(f"The board raised {board.error_line(e)}")
         show(name, anchor, result)
         results.append((name, result))
     return results
@@ -299,17 +301,18 @@ def main() -> int:
     unknown = set(args.checks) - set(CHECKS)
     if unknown:
         parser.error(f"unknown check {', '.join(sorted(unknown))}; choose from {', '.join(CHECKS)}")
-    # The board check always runs first: nothing else works without the board.
-    names = ["board", *(n for n in args.checks or CHECKS if n != "board")]
+    # In the order of CHECKS, each once. The board check always runs first:
+    # nothing else works without the board.
+    names = [n for n in CHECKS if n == "board" or not args.checks or n in args.checks]
 
-    try:
-        port = ports.find_port()
-    except ports.PortError as e:
-        console.fail(str(e))
+    port = ports.require_port()
     print(f"Bring-up test on {port}\n")
     try:
         with board.connect(port) as transport:
-            board.load_board_code(transport)
+            try:
+                board.load_board_code(transport)
+            except board.TransportExecError as e:
+                console.fail(f"The bring-up checks didn't load on the board: {board.error_line(e)}")
             unit = Unit(transport, named=set(args.checks))
             try:
                 results = run(unit, names)
@@ -321,7 +324,7 @@ def main() -> int:
                         f"{console.WARN} Couldn't reset the pins. Press the board's reset button."
                     )
     except board.TransportError as e:
-        console.fail(f"The board doesn't respond ({e}). Run `just doctor`.")
+        board.fail_unresponsive(e)
     except KeyboardInterrupt:
         print("\nStopped.")
         return 1

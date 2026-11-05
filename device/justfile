@@ -1,7 +1,8 @@
 # Tasks for the Safe Driveway remote device. Run `just` to list them.
 #
 # The board's serial port is found automatically. When more than one is
-# connected, choose with PORT, for example: PORT=/dev/ttyUSB1 just bringup
+# connected, choose with DEVICE_PORT, for example:
+#   DEVICE_PORT=/dev/ttyUSB1 just bringup
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
@@ -14,7 +15,12 @@ doctor:
     @uv run python -m host.doctor
 
 # Erase the board and write the pinned MicroPython; [--yes] skips the question, [FIRMWARE] writes another image
-[no-exit-message]
+[no-exit-message, positional-arguments, unix]
+flash *args:
+    @uv run python -m host.flash "$@"
+
+# PowerShell can't take positional arguments, so a FIRMWARE path can't contain spaces here.
+[no-exit-message, windows]
 flash *args:
     @uv run python -m host.flash {{ args }}
 

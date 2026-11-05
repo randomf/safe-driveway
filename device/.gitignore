@@ -6,6 +6,7 @@
 
 # MicroPython type stubs (just stubs)
 .stubs/
+.stubs.new/
 
 # Python and ruff caches
 __pycache__/

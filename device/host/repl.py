@@ -1,20 +1,18 @@
 """Open the MicroPython REPL on the board, with ../board/ mounted. Leave with Ctrl-] or Ctrl-X.
 
-In the REPL, `from bringup import *` loads the bring-up checks and the sensor driver.
+In the REPL, `from bringup import *` loads the bring-up checks; they find the
+sensor driver in the mounted lib/ folder, also after a soft reset with Ctrl-D.
 """
 
 import subprocess
 import sys
 
-from host import board, console, ports
+from host import board, ports
 
 
 def main() -> int:
-    try:
-        port = ports.find_port()
-    except ports.PortError as e:
-        console.fail(str(e))
-    command = ["connect", port, "mount", str(board.BOARD_DIR), "exec", board.LIB_PATH, "repl"]
+    port = ports.require_port()
+    command = ["connect", port, "mount", str(board.BOARD_DIR), "repl"]
     return subprocess.run([sys.executable, "-m", "mpremote", *command], check=False).returncode
 
 

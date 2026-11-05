@@ -52,7 +52,13 @@ def unbound_bridges_linux() -> list[tuple[str, str, str]]:
 
 
 def brltty_running() -> bool:
-    return any(comm.read_text().strip() == "brltty" for comm in Path("/proc").glob("[0-9]*/comm"))
+    for comm in Path("/proc").glob("[0-9]*/comm"):
+        try:
+            if comm.read_text().strip() == "brltty":
+                return True
+        except OSError:
+            pass  # the process ended while we looked
+    return False
 
 
 def explain_missing_port() -> None:
@@ -116,7 +122,7 @@ def check_port() -> str | None:
             explain_missing_port()
         return None
     if not Path(port).exists() and os.name == "posix":
-        report(console.FAIL, f"{port} (from PORT) doesn't exist")
+        report(console.FAIL, f"{port} (from {ports.PORT_VARIABLE}) doesn't exist")
         return None
     report(console.OK, f"Board found on {port}")
     return port if check_access(port) else None

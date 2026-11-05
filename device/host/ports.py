@@ -5,6 +5,11 @@ import os
 from serial.tools import list_ports
 from serial.tools.list_ports_common import ListPortInfo
 
+from host import console
+
+# The environment variable that names the port when more than one is connected.
+PORT_VARIABLE = "DEVICE_PORT"
+
 # USB-to-serial chips found on ESP32 boards: (vendor ID, product ID) -> (name, Linux driver)
 KNOWN_BRIDGES = {
     (0x1A86, 0x7523): ("CH340", "ch341"),
@@ -31,8 +36,8 @@ def describe(port: ListPortInfo) -> str:
 
 
 def find_port() -> str:
-    """The port named in $PORT, or the only USB serial port. Never guesses between several."""
-    port = os.environ.get("PORT")
+    """The port named in $DEVICE_PORT, or the only USB serial port. Never guesses between several."""
+    port = os.environ.get(PORT_VARIABLE)
     if port:
         return port
     ports = usb_ports()
@@ -42,6 +47,14 @@ def find_port() -> str:
         raise PortError("No board found on any USB serial port. Run `just doctor` to see why.")
     listing = "\n".join(f"    {describe(p)}" for p in ports)
     raise PortError(
-        "More than one USB serial port found. Choose one with PORT, "
-        f"for example `PORT={ports[0].device} just ...`:\n{listing}"
+        f"More than one USB serial port found. Choose one with {PORT_VARIABLE}, "
+        f"for example `{PORT_VARIABLE}={ports[0].device} just ...`:\n{listing}"
     )
+
+
+def require_port() -> str:
+    """The board's port, or stop the task and say why there is none."""
+    try:
+        return find_port()
+    except PortError as e:
+        console.fail(str(e))

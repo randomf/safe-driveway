@@ -8,7 +8,7 @@ the end of this file.
     tof = VL53L1X(I2C(0, scl=Pin(18), sda=Pin(19), freq=400_000))
     tof.configure(short=True, timing_budget_ms=50)
     tof.start()
-    distance_mm, status = tof.read()  # status 0 means the distance is valid
+    distance_mm, status = tof.read()  # a real target when status is in VALID
     tof.stop()
 """
 
@@ -97,18 +97,32 @@ _RANGE_STATUS = {
     13: 13,
 }
 
-# The ULD statuses its user manual (UM2510) explains.
+# The ULD's status numbers, named after ST's VL53L1_RANGESTATUS_* constants.
 STATUS_TEXT = {
     0: "valid",
     1: "sigma failure",
     2: "signal failure",
+    3: "valid, below minimum range",
     4: "out of bounds",
+    5: "hardware failure",
+    6: "valid, no wraparound check",
     7: "wraparound",
+    9: "crosstalk signal failure",
+    10: "first measurement",
+    11: "valid, merged pulse",
+    12: "target present, lack of signal",
+    13: "below minimum range",
 }
+
+# Statuses whose distance belongs to a real target.
+VALID = (0, 3, 6, 11)
+
+# Statuses that mean a target closer than the 4 cm the sensor guarantees.
+TOO_CLOSE = (3, 13)
 
 
 def status_text(status):
-    return STATUS_TEXT.get(status, f"error {status}")
+    return STATUS_TEXT.get(status, f"status {status}")
 
 
 class VL53L1X:
@@ -201,7 +215,7 @@ class VL53L1X:
         self._write8(_SYSTEM__INTERRUPT_CLEAR, 0x01)
 
     def read(self):
-        """Wait for the next measurement: (distance in mm, status). Status 0 means valid."""
+        """Wait for the next measurement: (distance in mm, status). See VALID and TOO_CLOSE."""
         self._wait_for_data()
         raw_status = self._read8(_RESULT__RANGE_STATUS) & 0x1F
         distance = self._read16(_RESULT__FINAL_CROSSTALK_CORRECTED_RANGE_MM_SD0)
