@@ -1,6 +1,6 @@
 # 1. Prototype hardware for the remote device
 
-- **Status:** Accepted
+- **Status:** Accepted. The distance sensor is superseded by [ADR 0004](0004-vl53l1x-distance-sensor.md)
 - **Date:** 2026-11-01
 
 ## Context

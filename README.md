@@ -27,7 +27,7 @@ You place one or more small remote devices at the narrow spot. They communicate 
 The first prototype of the remote device is built from off-the-shelf parts:
 
 - **ESP32 development board** compatible with the WEMOS LOLIN32 Lite, with a built-in Li-Po charger, Wi-Fi, Bluetooth, MicroPython support and a USB-C connector
-- **VL53L0X laser time-of-flight (ToF) distance sensor**
+- **VL53L1X laser time-of-flight (ToF) distance sensor**
 - **YL-44 active buzzer module** for audible signalling
 - **Li-Po battery 803450**, 3.7 V, 1500 mAh
 - **Waterproof 19 mm latching switch** with white LED backlight, used as the power switch and power light

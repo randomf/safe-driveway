@@ -84,7 +84,7 @@ The board and sensor checks run by themselves. For the LEDs and the buzzer, the 
 Bring-up test on /dev/ttyUSB0
 
 ✓ board    MicroPython 1.29.0 on Generic ESP32 module with ESP32, 160 MHz, ID 08:ad:0a:5b:9f:b8
-✓ sensor   VL53L0X at 0x29, model ID 0xee, XSHUT switches it off and on
+✓ sensor   VL53L1X at 0x29, model ID 0xeacc, XSHUT switches it off and on
   leds     Watch the LEDs on wall A.
   Is the green LED on and the red LED off? [y/n] y
   …

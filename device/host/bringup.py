@@ -19,8 +19,8 @@ from host import board, console, ports, release
 BOARD_CODE = release.DEVICE_DIR / "board" / "bringup.py"
 DOC = "prototype-assembly.md"
 
-# The distance sensor in the parts list, see ../../doc/adr/0001-prototype-hardware.md.
-EXPECTED_SENSOR = "VL53L0X"
+# The distance sensor in the parts list, see ../../doc/adr/0004-vl53l1x-distance-sensor.md.
+EXPECTED_SENSOR = "VL53L1X"
 
 
 @dataclass
