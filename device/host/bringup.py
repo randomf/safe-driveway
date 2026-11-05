@@ -37,7 +37,7 @@ class Unit:
     def __init__(self, transport: board.SerialTransport, named: set[str]) -> None:
         self.transport = transport
         self.named = named  # the checks the person asked for by name
-        self.buzzer_silent = 1
+        self.buzzer_silent: int | None = None  # the level that silences it, once the check knows
 
     def call(self, expression: str) -> Any:
         return self.transport.eval(expression)
@@ -104,14 +104,13 @@ LED_STEPS = [
 
 
 def check_leds(unit: Unit) -> Result:
+    if not console.interactive():
+        return nobody()
     wrong = []
     try:
         for levels, question, what in LED_STEPS:
             unit.call(f"leds({levels})")
-            answer = console.ask(question)
-            if answer is None:
-                return nobody()
-            if not answer:
+            if not console.ask(question):
                 wrong.append(what)
     finally:
         unit.call("leds(0, 0)")
@@ -126,18 +125,19 @@ def check_leds(unit: Unit) -> Result:
 
 
 def check_buzzer(unit: Unit) -> Result:
+    if not console.interactive():
+        return nobody()
     try:
         unit.call("buzzer(1)")
         high = console.ask("The buzzer pin is HIGH now. Is the buzzer sounding?")
-        if high is None:
-            return nobody()
         unit.call("buzzer(0)")
         low = console.ask("The buzzer pin is LOW now. Is the buzzer sounding?")
-        if low is None:
-            return nobody()
     finally:
-        unit.call("buzzer(1)")
+        # Released until the answers show which level is silent.
+        unit.call("buzzer(None)")
     if low and not high:
+        unit.buzzer_silent = 1
+        unit.call("buzzer(1)")
         return ok(
             "low-triggered, the usual YL-44",
             "Buzzer is low-triggered: LOW sounds it, HIGH silences it.",

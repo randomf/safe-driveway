@@ -95,8 +95,15 @@ def leds(green, red):
 
 
 def buzzer(level):
-    """Set the buzzer pin. On the usual YL-44, 0 sounds the buzzer and 1 silences it."""
-    Pin(BUZZER, Pin.OUT, value=level)
+    """Set the buzzer pin to 1 (HIGH) or 0 (LOW), or release it with None.
+
+    On the usual YL-44, LOW sounds the buzzer and HIGH silences it, but some
+    modules work the other way round. Release the pin while that's unknown.
+    """
+    if level is None:
+        Pin(BUZZER, Pin.IN)
+    else:
+        Pin(BUZZER, Pin.OUT, value=level)
 
 
 def battery(samples=16):
@@ -108,7 +115,7 @@ def battery(samples=16):
     return total / samples * 2 / 1_000_000
 
 
-def safe(buzzer_silent=1):
-    """Leave the unit quiet and dark."""
+def safe(buzzer_silent=None):
+    """Leave the unit quiet and dark. Without the buzzer's silent level, release its pin."""
     leds(0, 0)
     buzzer(buzzer_silent)
