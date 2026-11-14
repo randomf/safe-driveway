@@ -34,7 +34,7 @@ The first prototype of the remote device is built from off-the-shelf parts:
 - **Green and red 5 mm LED** for visual status
 - **IP65 plastic box**, 120 × 80 × 50 mm, to house the electronics at the passage. A 3D-printed enclosure will follow.
 
-The device talks to the phone over Bluetooth Low Energy. [device/prototype-assembly.md](device/prototype-assembly.md) describes how to wire and assemble a unit, [device/README.md](device/README.md) how to set up a computer to flash and test it, and [doc/adr/](doc/adr/) records the decisions behind the hardware, the communication method, the device's toolchain and the app platform.
+The device talks to the phone over Bluetooth Low Energy, using the protocol in [doc/ble-protocol.md](doc/ble-protocol.md). [device/prototype-assembly.md](device/prototype-assembly.md) describes how to wire and assemble a unit, [device/README.md](device/README.md) how to set up a computer to flash and test it, and [doc/adr/](doc/adr/) records the decisions behind the hardware, the communication method and its protocol, the device's toolchain and the app platform.
 
 ## Mobile app
 

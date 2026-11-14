@@ -2,7 +2,7 @@
 
 This document describes how to wire and assemble one unit of the first Safe Driveway prototype. Why these parts were chosen is recorded in [ADR 0001](../doc/adr/0001-prototype-hardware.md), and the choice of Bluetooth Low Energy in [ADR 0002](../doc/adr/0002-ble-communication.md).
 
-This document covers hardware only. The blink and beep patterns, the distance thresholds and what "ready" means are defined by the firmware and will be documented with it. How to set up a computer to flash and test a unit is in [README.md](README.md).
+This document covers hardware only. The distance thresholds are set per passage from the app, and when the unit measures and signals is set by the protocol in [doc/ble-protocol.md](../doc/ble-protocol.md). The blink and beep patterns and what "ready" means are defined by the firmware and will be documented with it. How to set up a computer to flash and test a unit is in [README.md](README.md).
 
 ## What each part does
 

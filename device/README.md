@@ -7,7 +7,7 @@ This folder holds everything needed to build the remote device that is installed
 | [prototype-assembly.md](prototype-assembly.md) | Parts, wiring, assembly and bring-up tests of the prototype unit |
 | [justfile](justfile) | The tasks listed under [Tasks](#tasks) |
 | [host/](host/) | Code that runs on the computer: flashing, `doctor` and the guided bring-up test |
-| [board/](board/) | Code that runs on the board, in MicroPython: the bring-up checks, and in [board/lib/](board/lib/) libraries such as the VL53L1X sensor driver. The firmware will go in `board/firmware/` |
+| [board/](board/) | Code that runs on the board, in MicroPython: the bring-up checks, and in [board/lib/](board/lib/) libraries such as the VL53L1X sensor driver. The firmware will go in `board/firmware/` and implement the BLE protocol in [doc/ble-protocol.md](../doc/ble-protocol.md) |
 | [micropython.toml](micropython.toml) | The MicroPython release that every unit runs |
 | `pyproject.toml`, `uv.lock`, `.python-version` | The Python environment for the code in `host/` |
 

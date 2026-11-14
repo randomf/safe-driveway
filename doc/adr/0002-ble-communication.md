@@ -1,6 +1,6 @@
 # 2. Bluetooth Low Energy between the device and the phone
 
-- **Status:** Accepted
+- **Status:** Accepted. The protocol is decided in [ADR 0007](0007-ble-protocol.md) and specified in [doc/ble-protocol.md](../ble-protocol.md)
 - **Date:** 2026-11-01
 
 ## Context

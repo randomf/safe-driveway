@@ -2,7 +2,7 @@
 
 The app runs on a phone in the car. It connects to the units at a passage, shows the driver how far the car is from each wall and which way to steer, and sounds an alarm when the car gets too close. It is written in Kotlin Multiplatform for Android and iOS ([ADR 0006](../doc/adr/0006-kotlin-multiplatform-app.md)) and talks to the units over Bluetooth Low Energy ([ADR 0002](../doc/adr/0002-ble-communication.md)).
 
-This file describes what the first version supports. The communication protocol between the app and the units will be specified in `doc/`.
+This file describes what the first version supports. The communication protocol between the app and the units is specified in [doc/ble-protocol.md](../doc/ble-protocol.md) ([ADR 0007](../doc/adr/0007-ble-protocol.md)).
 
 ## Principles
 
@@ -16,7 +16,7 @@ This file describes what the first version supports. The communication protocol 
 
 - **Unit:** one remote device ([README](../README.md#prototype-hardware)). It measures the sideways distance to the car while the car's body is in front of its sensor.
 - **Passage:** a narrow place the car drives through, such as a garage entrance or a driveway between two walls. A passage has up to 4 gates and up to 8 units.
-- **Gate:** a point along the passage with a unit on the left wall, the right wall or both, facing each other. Its position is its distance from one end of the passage.
+- **Gate:** a point along the passage with a unit on the left wall, the right wall or both, facing each other. Its position is its distance from one end of the passage. Left and right are as seen standing at that end, looking along the passage.
 - **Segment:** the stretch of the passage between two neighbouring gates.
 - **Zero offset:** the distance from a unit's sensor to the line the car must not cross, such as the wall face, or a door frame or pillar that sticks out further. The gap shown is the reading minus the zero offset. It also lets the sensor sit at least 4 cm behind that line, so it never has to measure below the VL53L1X's 4 cm minimum ([ADR 0004](../doc/adr/0004-vl53l1x-distance-sensor.md)).
 - **Thresholds:** a warning gap and a critical gap, set per passage in 0.5 cm steps. They default to 15 cm and 5 cm. A tight passage needs smaller values, or the warning sounds all the time.
@@ -26,7 +26,7 @@ This file describes what the first version supports. The communication protocol 
 ### Units and connections
 
 - The app connects straight to every unit of the passage: up to 8, or as many as the phone allows (see [Risks](#risks)).
-- Each unit shows one status: searching, connecting, connected, reconnecting, couldn't connect (phone limit), in use by another phone, low battery or sensor fault.
+- Each unit shows one status: searching, connecting, connected, reconnecting, couldn't connect (phone limit), in use by another phone, needs a newer app, low battery or sensor fault.
 - The driver can connect or disconnect a unit, reconnect all units, forget a unit, or replace a broken unit with a new one that takes over its setup.
 - While the app is open, it reconnects lost units by itself.
 - Each unit sends 20 readings per second. A reading reaches the screen and the sound within 100 ms of being measured.
@@ -41,12 +41,12 @@ This file describes what the first version supports. The communication protocol 
 
 ### Setting up and sharing a passage
 
-The passage's setup is stored on its units, with a version number, so that any phone can read it. Each phone stores only its driver's preferences: whether they drive into the passage forwards or reverse in, sound on or off, and the volume.
+The passage's setup, including the list of all its units, is stored on every one of its units, with a version number, so that any phone can read it and knows how many units to expect. Each phone stores only its driver's preferences (whether they drive into the passage forwards or reverse in, sound on or off, and the volume) and the passage PIN once it has been entered on that phone, in the platform's secure storage.
 
 The first phone sets up a passage like this:
 
-1. Create the passage and name it.
-2. The app lists nearby units that don't belong to a passage yet.
+1. Create the passage and name it. The units broadcast the name, so the app says that anyone nearby can read it.
+2. The app lists nearby units that don't belong to a passage yet, by the last 4 characters of their unit ID, such as "Safe Driveway 9FB8".
 3. Tap *identify* on a unit to make it blink and beep, to tell which unit is which.
 4. Assign each unit a gate and a side, and choose whether its own buzzer and LEDs signal the gap.
 5. Enter each gate's position along the passage.
@@ -56,10 +56,11 @@ The first phone sets up a passage like this:
 After that:
 
 - Any phone with the app can connect to the passage and show its readings. A second phone opened near the units finds the passage and works straight away.
-- Changing the setup needs the passage PIN. The PIN guards against accidents and casual mischief, not against a determined attacker, because it travels over BLE unencrypted. A forgotten PIN is reset by switching each unit off and on and setting a new PIN within 2 minutes.
-- If a unit was switched off while the setup changed, the units disagree. The app uses the setup with the highest version number and writes it to the units that are behind.
+- Changing the setup needs the passage PIN, of 4 to 8 digits. The PIN guards against accidents and casual mischief, not against a determined attacker, because it travels over BLE unencrypted. A forgotten PIN is reset by switching each unit off and on and setting a new PIN within 2 minutes. After 5 wrong PINs in a row, a unit refuses the PIN until it is switched off and on.
+- If a unit was switched off while the setup changed, the units disagree. The app uses the setup with the highest version number. If the phone knows the PIN, it writes that setup to the units that are behind; otherwise it shows them as out of date.
+- A unit that was forgotten or replaced while out of reach still carries the passage's ID when it comes back. A phone that knows the PIN resets it to a unit that belongs to no passage; other phones leave it alone.
 - The app remembers every passage it has used, for example a garage and a gate.
-- Each unit's details show its name, gate, side, zero offset, firmware version, battery, signal strength and sensor status.
+- Each unit's details show its name, unit ID, gate, side, zero offset, firmware version, battery, signal strength and sensor status, and whether its setup is out of date.
 
 ### Main screen
 
@@ -83,7 +84,7 @@ What the screen shows:
 - Between the warning and the critical threshold, the phone beeps, faster as the gap closes. Below the critical threshold, it plays a continuous tone.
 - Alarms play even when the phone is on silent or Do Not Disturb, at a volume set in the app. Other audio, such as music or navigation, is turned down while the car is in the passage.
 - The sound goes through the phone's current audio output. Bluetooth car audio commonly adds 100–200 ms of delay, so the screen and the units' own buzzers are the fastest warnings.
-- The units' own buzzers and red LEDs signal the gap too, unless the passage's setup switches them off.
+- The units' own buzzers and red LEDs signal the gap too, unless the passage's setup switches them off. They signal while a phone is connected, and, if the connection is lost, until the car has gone, for at most 2 minutes. They stay quiet when no phone has connected, after the app disconnects on purpose, and while their setup is being changed.
 - The suggestion arrow says how to turn the steering wheel: left, right or keep straight. It shows only while a gate sees the car.
   - When two gates see the car, the app projects the car's current heading to the next gate ahead. If one predicted gap there is smaller than the other by more than a small margin, it suggests turning the wheel to even them out.
   - When one gate sees the car, it suggests moving towards the bigger gap.
@@ -103,18 +104,19 @@ What the screen shows:
 
 ## Needs from the units
 
-What the app needs from the units' firmware. The protocol spec in `doc/` will define how.
+What the app needs from the units' firmware. [doc/ble-protocol.md](../doc/ble-protocol.md) defines how.
 
-- Distance readings, 20 per second, each with a status that says whether it is valid.
+- Distance readings, 20 per second while a phone is connected, each with a status that says whether it is valid.
 - The battery level, on units fitted with the battery divider.
-- The firmware version and the sensor's status.
-- The stored setup: the passage's ID, name, setup version and PIN, the positions of all its gates and its thresholds, and the unit's own name, gate, side, zero offset and whether its buzzer and LEDs signal the gap. A unit accepts changes only with the PIN.
+- The unit ID, the firmware version and the sensor's status.
+- The stored setup, the same on every unit of the passage: the passage's ID, name and setup version, the positions of its gates, its thresholds, and for every unit its ID, name, gate, side, zero offset and whether its buzzer and LEDs signal the gap. The PIN is stored apart from it and can't be read back. A unit accepts changes only with the PIN.
 - A 2-minute window after the unit is switched on, during which a new PIN can be set without the old one.
 - An *identify* action that blinks the LEDs and sounds the buzzer.
 - The unit's own buzzer and red LED signal the gap using the passage's thresholds and the unit's zero offset.
-- One phone connected at a time. While connected, the unit keeps advertising with an "in use" flag, so that other phones show "in use by another phone" instead of not finding it. The ESP32 stops advertising when a phone connects, so the firmware has to restart it.
+- One phone connected at a time. While connected, the unit keeps advertising with an "in use" flag, but not connectably, so that other phones show "in use by another phone" instead of not finding it. The ESP32 stops advertising when a phone connects, so the firmware has to restart it.
+- The passage's ID and name in the advertising, so that the app can find the passage and ask which one the driver means without connecting.
 
 ## Risks
 
 - **Number of connections.** Phones limit how many BLE connections they hold at once, and 8 units is at that limit ([ADR 0006](../doc/adr/0006-kotlin-multiplatform-app.md#consequences)). Before the first release, 8 units are tested on an Android 13 or 14 phone, an Android 15 or later phone and an iPhone. Most passages need 1 or 2 gates, so 2 to 4 units, well within the limit.
-- **Accuracy.** Gaps are shown in 0.5 cm steps. The VL53L1X may not be that accurate on every car's paint or in strong light, so the display steps are checked against real readings before the first release.
+- **Accuracy.** Gaps are shown in 0.5 cm steps. The VL53L1X may not be that accurate on every car's paint or in strong light, so the display steps are checked against real readings before the first release. A dark or glossy car may return too little light to be seen at all; whether the units report such a car as no data rather than as an empty gate is checked with real cars too.
