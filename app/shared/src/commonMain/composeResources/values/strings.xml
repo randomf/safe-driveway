@@ -1,0 +1,11 @@
+<resources>
+    <string name="greeting">Hello, world!</string>
+    <string name="bluetooth_checking">Checking Bluetooth…</string>
+    <string name="bluetooth_not_supported">This phone doesn’t support Bluetooth Low Energy.</string>
+    <string name="bluetooth_permission_needed">The app needs access to Bluetooth to find the units.</string>
+    <string name="bluetooth_permission_blocked">The app needs access to Bluetooth to find the units. Allow Nearby devices in its settings.</string>
+    <string name="bluetooth_off">Bluetooth is off. Turn it on to connect to the units.</string>
+    <string name="bluetooth_ready">Bluetooth is ready.</string>
+    <string name="allow_bluetooth">Allow Bluetooth</string>
+    <string name="open_settings">Open settings</string>
+</resources>

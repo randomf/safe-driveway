@@ -1,6 +1,6 @@
 # Mobile app features
 
-The app runs on a phone in the car. It connects to the units at a passage, shows the driver how far the car is from each wall and which way to steer, and sounds an alarm when the car gets too close. It is written in Kotlin Multiplatform for Android and iOS ([ADR 0006](../doc/adr/0006-kotlin-multiplatform-app.md)) and talks to the units over Bluetooth Low Energy ([ADR 0002](../doc/adr/0002-ble-communication.md)).
+The app runs on a phone in the car. It connects to the units at a passage, shows the driver how far the car is from each wall and which way to steer, and sounds an alarm when the car gets too close. It is written in Kotlin Multiplatform for Android 12 and later and for iOS ([ADR 0006](../doc/adr/0006-kotlin-multiplatform-app.md)) and talks to the units over Bluetooth Low Energy ([ADR 0002](../doc/adr/0002-ble-communication.md)).
 
 This file describes what the first version supports. The communication protocol between the app and the units is specified in [doc/ble-protocol.md](../doc/ble-protocol.md) ([ADR 0007](../doc/adr/0007-ble-protocol.md)).
 

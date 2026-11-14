@@ -1,0 +1,46 @@
+# Tasks for the Safe Driveway mobile app. Run `just` to list them.
+#
+# They run the Gradle wrapper, the same build that Android Studio runs. Versions are set in
+# gradle/libs.versions.toml, the JDK in gradle/gradle-daemon-jvm.properties.
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+
+# Android Studio's setup wizard installs the SDK here. Set ANDROID_HOME, or sdk.dir in
+# local.properties, to use another. This is the only place that knows the default.
+android_studio_sdk := if os() == "macos" { home_directory() / "Library/Android/sdk" } \
+    else if os() == "windows" { env("LOCALAPPDATA", "") / "Android/Sdk" } \
+    else { home_directory() / "Android/Sdk" }
+
+export ANDROID_HOME := env("ANDROID_HOME", env("ANDROID_SDK_ROOT", android_studio_sdk))
+
+_default:
+    @just --list --unsorted
+
+# Check that this computer is ready to build the app and run it on a phone
+[no-exit-message]
+doctor:
+    @java tools/Doctor.java "{{ android_studio_sdk }}"
+
+# Build the debug APK into androidApp/build/outputs/apk/debug/
+[no-exit-message]
+build:
+    @./gradlew :androidApp:assembleDebug
+
+# Install the debug build on the phone connected over USB and start it
+[no-exit-message]
+run:
+    @./gradlew :androidApp:startDebug
+
+# Run the unit tests
+[no-exit-message]
+test:
+    @./gradlew :shared:allTests :androidApp:testDebugUnitTest
+
+# Check code style and run Android Lint, without changing anything
+[no-exit-message]
+lint:
+    @./gradlew ktlintCheck lint
+
+# Format the code and fix what ktlint can fix by itself
+fmt:
+    @./gradlew ktlintFormat

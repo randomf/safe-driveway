@@ -1,0 +1,43 @@
+# Every version the app is built with, except the Gradle wrapper
+# (gradle/wrapper/gradle-wrapper.properties), the JDK (gradle/gradle-daemon-jvm.properties)
+# and the toolchain resolver in settings.gradle.kts.
+
+[versions]
+android-compileSdk = "37"
+android-targetSdk = "37"
+# Android 12: Bluetooth needs only BLUETOOTH_SCAN and BLUETOOTH_CONNECT, no location (ADR 0006).
+android-minSdk = "31"
+
+agp = "9.5.1"
+kotlin = "2.4.21"
+compose-multiplatform = "1.12.2"
+# The Material3 release that Compose Multiplatform 1.12.2 is paired with. JetBrains publishes it
+# only as alpha.
+compose-material3 = "1.12.0-alpha03"
+# Kable hasn't reached 1.0, so an upgrade is tested against a real unit (ADR 0006).
+kable = "0.45.0"
+androidx-activity = "1.13.0"
+androidx-lifecycle = "2.11.0"
+ktlint-gradle = "14.2.0"
+ktlint-cli = "1.8.0"
+
+[libraries]
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-material3" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose-multiplatform" }
+kable = { module = "com.juul.kable:kable-core", version.ref = "kable" }
+androidx-activity = { module = "androidx.activity:activity", version.ref = "androidx-activity" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+android-lint = { id = "com.android.lint", version.ref = "agp" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }

@@ -1,0 +1,38 @@
+# Checks the mobile app on every change to it: code style and Android Lint, the unit tests,
+# and a debug build, which is kept as a download for 14 days. See app/README.md.
+name: App
+
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", ".github/workflows/app.yml"]
+  pull_request:
+    paths: ["app/**", ".github/workflows/app.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      # Gradle starts on this JDK, and it's also the JDK 21 that gradle-daemon-jvm.properties asks for.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: extractions/setup-just@v4
+      # The runner's Android SDK is in ANDROID_HOME. Gradle downloads the platform if it's missing.
+      - run: just lint
+      - run: just test
+      - run: just build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: safe-driveway-debug
+          path: app/androidApp/build/outputs/apk/debug/*.apk
+          retention-days: 14

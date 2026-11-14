@@ -17,6 +17,7 @@ The app is written in **Kotlin Multiplatform** (KMP), as one project in `app/`:
 - **BLE:** [Kable](https://github.com/JuulLabs/kable) by JUUL Labs, under the Apache-2.0 licence. It puts Android's BLE API and Apple's Core Bluetooth behind one coroutine-based API, and delivers each peripheral's notifications as a Kotlin `Flow`.
 - **UI:** [Compose Multiplatform](https://www.jetbrains.com/compose-multiplatform/) on both Android and iOS.
 - **Platform code:** what Kable doesn't cover goes in each platform's own source set, written in Kotlin against the native API.
+- **Android version:** Android 12 (API level 31) and later. From Android 12, an app that declares it never uses Bluetooth to find the phone's location needs only the Bluetooth permissions, and no location permission or location services.
 
 ## Alternatives considered
 
@@ -28,11 +29,12 @@ The app is written in **Kotlin Multiplatform** (KMP), as one project in `app/`:
 ## Consequences
 
 - Building and signing the iOS app needs a Mac with Xcode. This would hold for every cross-platform option. The Android app builds on Linux, macOS or Windows.
-- The app is built with Gradle and a JDK, not with the device's uv and just tasks ([ADR 0003](0003-device-development-toolchain.md)).
+- The app is built with Gradle and a JDK, not with the device's uv ([ADR 0003](0003-device-development-toolchain.md)). Like the device, it has `just` tasks of its own, in `app/` ([ADR 0008](0008-app-development-toolchain.md)).
 - Kable's API has not reached 1.0, so an upgrade can break the app. The app pins its version, and an upgrade is tested against a real device.
 - Phones limit how many BLE connections they hold at once, and 8 units is at that limit. Up to Android 14 the limit is 7, and from Android 15 it is 8 by default, shared with any watch or earbuds already connected; phone makers can change it. iOS has a limit that Apple doesn't publish and that varies by model. The app connects to as many units as the phone allows and shows the ones it couldn't connect. Before the first release, 8 units are tested on an Android 13 or 14 phone, an Android 15 or later phone and an iPhone. If that fails, a new ADR has the units relay each other's readings over ESP-NOW, so that the phone needs fewer connections.
 - 20 readings per second from each unit fit the connection interval both platforms use, about 30 ms. iOS chooses the interval itself; on Android the app can ask for a shorter one through Kable. MicroPython can't ask for a different interval from the unit's side.
 - Compose Multiplatform is younger on iOS than on Android. If the iOS screens need to look more native, they can be rewritten in SwiftUI while the shared module stays.
 - The decoding of the readings and the logic are written and tested once, in the shared module.
-- Each platform still needs its own Bluetooth setup. Android 12 and later ask the user for the `BLUETOOTH_SCAN` and `BLUETOOTH_CONNECT` permissions, older versions for location. iOS needs `NSBluetoothAlwaysUsageDescription` in the app's `Info.plist`.
+- Each platform still needs its own Bluetooth setup. On Android the app asks the user for the `BLUETOOTH_SCAN` and `BLUETOOTH_CONNECT` permissions, and declares `BLUETOOTH_SCAN` with `neverForLocation`. iOS needs `NSBluetoothAlwaysUsageDescription` in the app's `Info.plist`.
+- Phones with Android 8 to 11 can't run the app. Supporting them would mean asking for the location permission and having the driver turn on location services, as a second way through the app's start.
 - The usual editors for KMP are Android Studio and IntelliJ IDEA. VS Code's Kotlin support is limited, so the VS Code workspace from ADR 0003 helps less with the app than with the device.
