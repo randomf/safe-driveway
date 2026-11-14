@@ -34,4 +34,8 @@ The first prototype of the remote device is built from off-the-shelf parts:
 - **Green and red 5 mm LED** for visual status
 - **IP65 plastic box**, 120 × 80 × 50 mm, to house the electronics at the passage. A 3D-printed enclosure will follow.
 
-The device talks to the phone over Bluetooth Low Energy. [device/prototype-assembly.md](device/prototype-assembly.md) describes how to wire and assemble a unit, [device/README.md](device/README.md) how to set up a computer to flash and test it, and [doc/adr/](doc/adr/) records the decisions behind the hardware, the communication method and the device's toolchain.
+The device talks to the phone over Bluetooth Low Energy. [device/prototype-assembly.md](device/prototype-assembly.md) describes how to wire and assemble a unit, [device/README.md](device/README.md) how to set up a computer to flash and test it, and [doc/adr/](doc/adr/) records the decisions behind the hardware, the communication method, the device's toolchain and the app platform.
+
+## Mobile app
+
+The app on the phone runs on Android and iOS. It is written once in Kotlin Multiplatform, with [Kable](https://github.com/JuulLabs/kable) for Bluetooth Low Energy and Compose Multiplatform for the screens ([ADR 0006](doc/adr/0006-kotlin-multiplatform-app.md)). [app/features.md](app/features.md) describes what it does: up to 8 units at a passage, their setup and status, and one screen with each gap, the car's position, steering suggestions and an alarm when the car gets too close. Its code will go in `app/`.
