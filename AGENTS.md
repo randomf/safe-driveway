@@ -28,7 +28,7 @@ Everything for the mobile app that runs on the phone in the car. `app/` is the r
 - App configuration, dependencies and build files: the Gradle build and its wrapper, `.editorconfig` and `app/gradle/libs.versions.toml`
 - App assets (icons, images, sounds, fonts, translations)
 - App tests, next to the code they test, such as `app/shared/src/commonTest/`
-- App documentation, such as [app/features.md](app/features.md) and [app/screens.md](app/screens.md)
+- App documentation, such as [app/features.md](app/features.md) and [app/screens.md](app/screens.md), and the screenshots they show, in `app/screenshots/`
 
 ### `doc/` — shared documentation and architecture decisions
 
@@ -60,5 +60,6 @@ GitHub Actions workflows in `.github/workflows/`, one per area that CI checks, s
 - Run `just lint` in `device/` before finishing a change to device code, and in `app/` before finishing a change to app code.
 - The project is licensed under the license in [LICENSE](LICENSE). Do not modify it.
 - Keep documentation up to date. Update the affected docs in the same change as the code, hardware or design they describe, never as a later follow-up. This covers [README.md](README.md), the files in `doc/`, and the documentation in `device/` and `app/`, and includes this file when the repository layout or rules change.
+- Retake the screenshots in `app/screenshots/` in the same change when the app's screens visibly change: a layout, colours, texts or what a screenshotted screen shows. Retake every screenshot of an affected screen, in the same state as before, so that the docs never show a screen the app no longer has. [app/README.md](app/README.md#screenshots) says how.
 - If a change contradicts an accepted ADR, add a new ADR that supersedes it instead of leaving the old one stale.
 - Before finishing a task, check whether any documentation mentions what you changed (hardware list, pin assignments, protocol, setup steps) and fix what no longer matches. Pin assignments and the expected sensor also live in the bring-up checks, `device/board/bringup.py` and `device/host/bringup.py`.

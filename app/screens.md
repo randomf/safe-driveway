@@ -58,9 +58,16 @@ Every passage this phone has used, and every passage in range that it hasn't, ea
 
 Below the list: how many new units, units that belong to no passage, are nearby, and *Set up a new passage*. The *i* in the top bar opens [About](#about).
 
+<img src="screenshots/passages.png" width="240" alt="The passages list: Garage in range with 4 units and 2 gates, Front gate not in range, and 3 new units nearby with Set up a new passage">
+
 ## Main screen
 
 Read at arm's length in a phone holder: large digits, high contrast, dark.
+
+<p>
+  <img src="screenshots/main-screen.png" width="240" alt="During a pass: Steer right, the smallest gap of 14.5 cm in orange, the car at gate 1 with 14.5 cm on its left and 31.0 cm on its right">
+  <img src="screenshots/critical.png" width="240" alt="Below the critical gap: 3.5 cm in red, the car tilted between both gates, and the screen's border red">
+</p>
 
 ```
 ┌─────────────────────────────────┐
@@ -93,6 +100,13 @@ In landscape, the passage takes the left half, and everything else the right hal
 ### Unit details
 
 A sheet over the lower part of the main screen: the unit's name and status, its gate and side, the live reading and gap, zero offset, battery, signal, firmware, sensor, whether its setup is up to date, and its unit ID. *Identify* makes it blink and beep. *Connect* or *Disconnect*. *Replace…* and *Forget…* ask for the PIN; *Forget…* first asks to confirm, and isn't offered for a passage's only unit, which goes with *Delete the passage* instead.
+
+<p>
+  <img src="screenshots/unit-details.png" width="240" alt="The details of the unit Bins: connected, gate 2 right, reading, gap, zero offset, battery, signal, firmware, sensor, setup and unit ID, with Identify, Disconnect, Replace and Forget">
+  <img src="screenshots/notices-sheet.png" width="240" alt="The notices: Pillar has an older setup, with Update, and Gate 1 right's battery at 12 percent">
+</p>
+
+*A unit's details, and the notices that the strip under the top bar opens.*
 
 ## Passage settings
 
@@ -127,6 +141,8 @@ The driver types the new PIN twice and taps *Start*, then switches each unit off
 6. **PIN**, 4 to 8 digits, typed twice.
 
 The last *Next* writes the setup to the units and then opens the new passage's main screen.
+
+<img src="screenshots/units-and-gates.png" width="240" alt="The units and gates board: Add a gate at the top, gate 2 with Pillar and Bins, gate 1 with Gate 1 left and Gate 1 right, and You stand here, looking along at the bottom">
 
 ### Setup
 

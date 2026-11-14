@@ -6,6 +6,7 @@ This folder holds the mobile app that runs on the phone in the car, and the task
 |---|---|
 | [features.md](features.md) | What the first version of the app does |
 | [screens.md](screens.md) | What each screen shows, and how the driver moves between them |
+| [screenshots/](screenshots/) | Screenshots for the documentation, from the emulator on the demo backend, with the debug build's **Demo** tab painted out where it isn't the subject |
 | [shared/](shared/) | The code for both platforms: the logic, the BLE connections and the screens, in Compose Multiplatform. Its texts are in `shared/src/commonMain/composeResources/`, in English (`values/`) and Czech (`values-cs/`). For now the screens run on a demo backend instead of the units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)) |
 | [androidApp/](androidApp/) | The Android application around `shared/`: its manifest, with the Bluetooth permissions, its icon and its activity, whose screen `shared/` sets. It has no Compose code of its own |
 | [justfile](justfile) | The tasks listed under [Tasks](#tasks) |
@@ -70,7 +71,48 @@ The emulator that Android Studio's wizard creates runs the app, but it has no re
 
 For now the app has no BLE code: its screens run on pretend units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)), so they work on any phone or the emulator. In a debug build, such as `just run` installs, the **Demo** tab on the right edge of every screen opens the demo panel. It chooses which passages are in range and which problems the units have, and *Play a pass* drives a simulated car through the open passage. The demo's own passages have the PIN 1234, and a passage set up in the demo has the PIN given to it. [screens.md](screens.md#demo-panel) lists what it can do.
 
+<img src="screenshots/demo-panel.png" width="240" alt="The demo panel over the main screen: the simulated pass's direction, end and course, and Play a pass">
+
 The screens' `@Preview` functions, in `shared/src/commonMain/kotlin/.../ui/Previews.kt`, show the main states in Android Studio.
+
+## Screenshots
+
+The screenshots in [screenshots/](screenshots/) appear in [screens.md](screens.md), in this file and in the repository's [README](../README.md). When a screen's look changes, retake every screenshot of it ([AGENTS.md](../AGENTS.md)):
+
+1. Start the emulator that Android Studio's wizard creates, with the app in English, and install the debug build on it:
+
+   ```bash
+   ANDROID_SERIAL=emulator-5554 just run
+   ```
+
+2. Give the status bar a fixed clock, a full battery and no notifications, with SystemUI's demo mode. Use the SDK's adb, see [Phone over USB on Linux](#phone-over-usb-on-linux):
+
+   ```bash
+   adb shell settings put global sysui_demo_allowed 1
+   adb shell am broadcast -a com.android.systemui.demo -e command enter
+   adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 1200
+   adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false
+   adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
+   ```
+
+3. Put the screen in the state the table below gives, with the [demo panel](#demo-panel), and take it at full size. For a pass, take a few in a row and keep the one that matches:
+
+   ```bash
+   adb exec-out screencap -p > shot.png
+   ```
+
+4. Save it under the same name at half size, 540 × 1200, as a PNG with 256 colours. Where the **Demo** tab lies over plain background, paint it out with the background around it; `demo-panel.png` keeps it.
+5. Update the image's `alt` text where it's shown, which says what the screenshot shows, such as the gaps.
+
+| File | Screen and state |
+|---|---|
+| `main-screen.png` | The garage during a *Tight* pass, forwards from the usual end, with only gate 1 seeing the car |
+| `critical.png` | The garage during a *Too close* pass, with both gates seeing the car and the gap below the critical gap |
+| `unit-details.png` | The details of *Bins*, with the *Low battery* and *Setup out of date* problems on |
+| `notices-sheet.png` | The notices, with the same problems on |
+| `passages.png` | The passages list, with the garage in range |
+| `units-and-gates.png` | The garage's *Units and gates*, from *Change the setup* with PIN 1234 |
+| `demo-panel.png` | The demo panel over the garage's main screen, with *Tight* chosen |
 
 ## Versions
 
