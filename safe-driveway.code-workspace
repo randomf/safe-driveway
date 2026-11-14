@@ -4,18 +4,24 @@
   // Each folder gets its own Python settings. "device" holds the host tools,
   // which run on the computer in the uv environment device/.venv. "device/board"
   // holds the code that runs on the ESP32; device/board/pyrightconfig.json checks
-  // it against the MicroPython stubs from `just stubs`.
+  // it against the MicroPython stubs from `just stubs`. "app" holds the mobile
+  // app, which is edited in Android Studio (see app/README.md).
   "folders": [
     { "name": "Safe Driveway", "path": "." },
     { "name": "device", "path": "device" },
-    { "name": "device/board (MicroPython)", "path": "device/board" }
+    { "name": "device/board (MicroPython)", "path": "device/board" },
+    { "name": "app", "path": "app" }
   ],
   "settings": {
-    // device/ and device/board/ are folders of their own above, so hide them
-    // inside their parents to show every file once.
+    // device/, device/board/ and app/ are folders of their own above, so hide
+    // them inside their parents to show every file once.
     "files.exclude": {
       "device": true,
       "board": true,
+      "app": true,
+      ".gradle": true,
+      ".kotlin": true,
+      "build": true,
       ".venv": true,
       ".cache": true,
       ".stubs": true,

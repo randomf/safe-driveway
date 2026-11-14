@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder icon until a real one is designed: a car between two walls, seen from above. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#9AA4AE"
+        android:pathData="M30,32h6v44h-6zM72,32h6v44h-6z" />
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M45,38h18a3,3 0,0 1,3 3v26a3,3 0,0 1,-3 3h-18a3,3 0,0 1,-3 -3v-26a3,3 0,0 1,3 -3z" />
+</vector>

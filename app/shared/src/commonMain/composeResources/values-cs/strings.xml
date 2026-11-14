@@ -1,0 +1,11 @@
+<resources>
+    <string name="greeting">Ahoj, světe!</string>
+    <string name="bluetooth_checking">Zjišťuji Bluetooth…</string>
+    <string name="bluetooth_not_supported">Tento telefon nepodporuje Bluetooth Low Energy.</string>
+    <string name="bluetooth_permission_needed">Aplikace potřebuje přístup k Bluetooth, aby našla jednotky.</string>
+    <string name="bluetooth_permission_blocked">Aplikace potřebuje přístup k Bluetooth, aby našla jednotky. Povolte jí Zařízení v okolí v nastavení.</string>
+    <string name="bluetooth_off">Bluetooth je vypnuté. Zapněte ho, aby se aplikace mohla připojit k jednotkám.</string>
+    <string name="bluetooth_ready">Bluetooth je připravené.</string>
+    <string name="allow_bluetooth">Povolit Bluetooth</string>
+    <string name="open_settings">Otevřít nastavení</string>
+</resources>

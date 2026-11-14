@@ -4,7 +4,7 @@ Safe Driveway is a hardware and software solution that prevents car scratches in
 
 ## Repository layout
 
-The repository has three top-level areas. Put every file in the one it belongs to.
+The repository has three top-level areas, and `.github/` for continuous integration. Put every file in the one it belongs to.
 
 ### `device/` — the remote device
 
@@ -20,12 +20,15 @@ Everything needed to build the physical device that is installed at the passage:
 
 ### `app/` — the mobile app
 
-Everything for the mobile app that runs on the phone in the car:
+Everything for the mobile app that runs on the phone in the car. `app/` is the root of its Gradle project:
 
-- App source code
+- Code shared by Android and iOS, in Kotlin Multiplatform with Compose Multiplatform, in `app/shared/`: platform-independent code in `src/commonMain/`, Android code in `src/androidMain/`, and the texts, in English and Czech, in `src/commonMain/composeResources/`
+- The Android application around it, with its manifest and icon, in `app/androidApp/`. It has no Compose code: `shared` sets its screen. The iOS app will go in `app/iosApp/`
+- Tasks to build, run and check the app, run as `just` tasks from `app/`. [app/README.md](app/README.md) covers the setup and the tasks
+- App configuration, dependencies and build files: the Gradle build and its wrapper, `.editorconfig` and `app/gradle/libs.versions.toml`
 - App assets (icons, images, sounds, fonts, translations)
-- App configuration, dependencies and build files
-- App-specific tests and documentation
+- App tests, next to the code they test, such as `app/shared/src/commonTest/`
+- App documentation, such as [app/features.md](app/features.md)
 
 ### `doc/` — shared documentation and architecture decisions
 
@@ -38,6 +41,10 @@ Documentation that concerns the project as a whole or both sides of it:
 
 Documentation that only concerns one side stays next to that side, in `device/` or `app/`.
 
+### `.github/` — continuous integration
+
+GitHub Actions workflows in `.github/workflows/`, one per area that CI checks, such as `app.yml` for the app.
+
 ## Rules
 
 - Files for building the device go in `device/`. Never put them in `app/` or at the repository root.
@@ -45,9 +52,11 @@ Documentation that only concerns one side stays next to that side, in `device/` 
 - Shared documentation and architecture decisions go in `doc/`. Anything shared by both sides, such as the communication protocol between device and phone, is documented once there and referenced from `device/` and `app/` rather than copied.
 - Record significant design choices (hardware selection, communication method, app platform) as an ADR in `doc/adr/`.
 - Ask before creating any other top-level directory.
-- Keep the repository root for project-level files only: `README.md`, `AGENTS.md`, `LICENSE`, the VS Code workspace `safe-driveway.code-workspace` and similar. When `app/` gets code, add it to the workspace as a folder of its own.
+- Keep the repository root for project-level files only: `README.md`, `AGENTS.md`, `LICENSE`, the VS Code workspace `safe-driveway.code-workspace` and similar. `device/` and `app/` are folders of their own in the workspace.
 - Add every device task to `device/justfile` as a `just` task. Set the MicroPython version only in `device/micropython.toml`.
-- Run `just lint` in `device/` before finishing a change to device code.
+- Add every app task to `app/justfile` as a `just` task. Set the app's library and plugin versions, and the Android versions it supports, only in `app/gradle/libs.versions.toml`. The exceptions are the ones [app/README.md](app/README.md#versions) lists: Gradle, the JDK, and the toolchain resolver plugin, which `app/settings.gradle.kts` has to name before the catalog is available.
+- Code in `app/shared/src/commonMain/` has to build for iOS too: put anything that uses an Android API in `src/androidMain/`. Put every text the app shows in its string resources, in English and Czech.
+- Run `just lint` in `device/` before finishing a change to device code, and in `app/` before finishing a change to app code.
 - The project is licensed under the license in [LICENSE](LICENSE). Do not modify it.
 - Keep documentation up to date. Update the affected docs in the same change as the code, hardware or design they describe, never as a later follow-up. This covers [README.md](README.md), the files in `doc/`, and the documentation in `device/` and `app/`, and includes this file when the repository layout or rules change.
 - If a change contradicts an accepted ADR, add a new ADR that supersedes it instead of leaving the old one stale.
