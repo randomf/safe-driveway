@@ -13,7 +13,7 @@ This document covers hardware only. The blink and beep patterns, the distance th
 | YL-44 buzzer | Signals the distance with sound |
 | Green LED | Shows that the unit is ready |
 | Red LED | Signals the distance with light |
-| 19 mm switch | Switches the unit on and off. Its white ring is lit while the unit is on |
+| Rocker switch | Switches the unit on and off |
 | Battery divider (optional) | Lets the firmware measure the battery voltage |
 
 ## Parts list
@@ -24,7 +24,7 @@ This document covers hardware only. The blink and beep patterns, the distance th
 | VL53L1X laser time-of-flight module | 1 | Any breakout with VIN, GND, SCL, SDA, XSHUT and GPIO1 pins and an onboard regulator works. VL53L0X modules look the same, so check the chip with `just bringup sensor`. See [ADR 0004](../doc/adr/0004-vl53l1x-distance-sensor.md) |
 | YL-44 active buzzer module | 1 | [dratek.cz 849](https://dratek.cz/arduino-platforma/849-eses-akusticky-bzucak-pro-jednodeskove-pocitace.html). Pins VCC, I/O, GND |
 | Li-Po battery 803450, 3.7 V, 1500 mAh | 1 | With a JST-PH 2.0 plug and a built-in protection circuit |
-| 19 mm latching switch with 6 V white LED ring | 1 | Terminals C, NO, NC and the two LED terminals |
+| Mini round rocker switch, ON-OFF, 15 mm hole | 1 | [rasel.cz 056-151](https://www.rasel.cz/kolebkovy-vypinac-0-1-250v-3a-mini-p17388/). Single pole, 250 V / 3 A, two solder tabs, no light. Snaps into a 15 mm round hole |
 | 5 mm LED, green | 1 | |
 | 5 mm LED, red | 1 | |
 | Resistor 220 Ω, ¼ W | 2 | One per LED |
@@ -44,7 +44,7 @@ This document covers hardware only. The blink and beep patterns, the distance th
 - Multimeter with continuity test
 - Wire stripper and side cutters
 - Heat gun or lighter for heat-shrink
-- Drill with 3 mm and 8 mm bits, a step drill up to 19 mm, and small files
+- Drill with 3 mm and 8 mm bits, a step drill up to 15 mm, and small files
 - Hot glue gun
 - Computer with a USB cable that carries data, set up as described in [README.md](README.md#setup), for flashing and testing the board
 
@@ -81,30 +81,26 @@ The switch is spliced into the red wire of the JST-PH extension lead, between th
  battery plug          JST-PH extension lead               board battery
  (803450)                                                  socket (JST-PH)
 
-  + red   ──────────────►  C ┐
-                             │  19 mm latching switch
-                             └ NO ────────┬──────────────────────►  +
-                                          │
-                                   LED +  ┤
-                                          │  white ring (6 V,
-                                   LED −  ┤  no extra resistor)
-                                          │
-  − black ────────────────────────────────┴──────────────────────►  −
+  + red   ──────────────►  ┐
+                           │  mini rocker switch (O / I)
+                           └ ────────────────────────────────────►  +
+
+  − black ───────────────────────────────────────────────────────►  −
 ```
 
-- The NC terminal stays unconnected.
-- The ring is rated for 6 V and has its own internal resistor. From a 3.0–4.2 V cell it glows a little dimmer than at 6 V, which is expected.
+- The switch has two terminals, and either one can take the battery side. Call the other one the board-side terminal: the battery divider connects there.
+- The switch has no light, so the unit has no power light. While the firmware isn't running, only the rocker's position shows whether the unit is on.
 
 ### Battery divider (optional)
 
 Fit this if you have the parts. It lets the firmware measure the battery voltage. Without it, everything else works the same, and the firmware must treat the measurement as optional.
 
 ```
- switch "LED +" terminal ── 100 kΩ ──┬── 100 kΩ ──► splice S2 (GND)
- (switched battery +)                │
-                                     ├── 100 nF ──► splice S2 (GND)
-                                     │
-                                     └────────────► pin 35
+ switch board-side terminal ── 100 kΩ ──┬── 100 kΩ ──► splice S2 (GND)
+ (switched battery +)                   │
+                                        ├── 100 nF ──► splice S2 (GND)
+                                        │
+                                        └────────────► pin 35
 ```
 
 Pin 35 sees half the battery voltage: 1.5–2.1 V for a 3.0–4.2 V cell. That is within the ESP32 ADC's range at 11 dB attenuation. The divider draws about 20 µA, and only while the switch is on.
@@ -196,7 +192,7 @@ The seller lists only the outside dimensions, so check every position against th
 - **Lid, sensor aperture:** an 8 mm round hole in the centre of the lid. Mount the VL53L1X module on the inside of the lid with its sensor chip (the small black package with two windows) centred in the hole and as close to the lid as possible. Fix it with M2 screws through the module's holes, or with hot glue on the module's edges. Keep glue off the chip, and peel off the thin protective film if there is one over the chip. The aperture must not cut into the sensor's 27° field of view, and nothing shiny may sit inside that cone.
 - **Wall A, LEDs:** two holes sized for your bezels (typically 6–8 mm), halfway between the two long walls and about 15 mm apart along the depth. The green LED goes nearer the base, the red one nearer the lid.
 - **Wall A, buzzer:** three or four 3 mm sound holes. Fix the YL-44 behind them with its M3 hole, or with hot glue, so the buzzer faces the holes as closely as possible.
-- **Wall B, switch:** a 19 mm hole. The switch body reaches about 30–40 mm into the box, so keep that space clear.
+- **Wall B, switch:** a 15 mm round hole. The switch is pushed in from outside and held by the spring clips on its sides, so don't make the hole oversize. Keep the space behind it clear for its body and solder tabs.
 - **Wall B, USB-C socket:** cut to the template of your panel-mount extension (usually a rectangular slot plus two M3 screw holes). The extension's plug goes into the board inside the box.
 - **Base, mounting:** use the box's own mounting holes if it has them. Otherwise drill two holes in the base, clear of the electronics.
 
@@ -230,12 +226,10 @@ JST-PH plugs are not wired the same way by every seller. A reversed battery can 
 
 ### 3. Build the power harness
 
-1. Find the switch's terminals with the continuity test: C–NC is closed when the switch is off, C–NO when it's on. The LED terminals are usually marked `+` and `−`.
-2. Cut the red wire of the extension lead. Solder the battery-side end to C and the board-side end to NO.
-3. Solder a short wire from NO to the ring's `LED +` terminal.
-4. Splice a wire from the black wire of the extension lead to the ring's `LED −` terminal. The black wire stays continuous.
-5. Insulate every joint with heat-shrink.
-6. Test it before connecting the board: plug in the battery. With the switch off, the board end of the lead reads 0 V and the ring is dark. With the switch on, it reads the battery voltage (3.0–4.2 V) and the ring lights.
+1. Check the switch with the continuity test: its two terminals connect when the rocker is pressed to `I` and disconnect at `O`.
+2. Cut the red wire of the extension lead. Solder the battery-side end to one terminal of the switch and the board-side end to the other. The black wire stays continuous.
+3. Insulate both joints with heat-shrink.
+4. Test it before connecting the board: plug in the battery. With the switch at `O`, the board end of the lead reads 0 V. At `I`, it reads the battery voltage (3.0–4.2 V).
 
 ### 4. Prepare the box
 
@@ -243,7 +237,7 @@ Mark and drill all openings as described in [Openings in the standard box](#open
 
 ### 5. Mount the panel parts
 
-Fit the switch, the LEDs in their bezels, the USB-C panel socket, the buzzer behind wall A and the sensor on the lid.
+Feed the switch's wires through its hole from outside, then push the switch in until its clips catch. If the wall is too thick for the clips, fix the switch from inside with hot glue. Fit the LEDs in their bezels, the USB-C panel socket, the buzzer behind wall A and the sensor on the lid.
 
 ### 6. Wire wall A
 
@@ -256,7 +250,7 @@ Fit the switch, the LEDs in their bezels, the USB-C panel socket, the buzzer beh
 1. Solder the wires straight into the board's holes. Don't fit the pin headers that come with the board.
 2. Make splices S1 and S2 close to the board, with one wire from each splice into the board's `3V` and `GND` holes.
 3. Wire the sensor: `VIN` → S1, `GND` → S2, `SCL` → `18`, `SDA` → `19`, `XSHUT` → `16`, `GPIO1` → `17`.
-4. Optional: build the battery divider. Solder the resistors and the capacitor in-line close to pin `35`, with the top of the divider wired to the switch's `LED +` terminal.
+4. Optional: build the battery divider. Solder the resistors and the capacitor in-line close to pin `35`, with the top of the divider wired to the switch's board-side terminal.
 
 ### 8. Fit everything into the box
 
@@ -330,23 +324,23 @@ Only for units with the battery divider. The full run asks whether it is fitted;
 
 The run reads the battery voltage on pin `35`, which should be about 3.0–4.2 V. It then asks for a multimeter reading across the battery and prints the offset between the two. Note the offset down.
 
-- **About 0 V:** check that the unit is switched on and that the top of the divider is wired to the switch's `LED +` terminal.
+- **About 0 V:** check that the unit is switched on and that the top of the divider is wired to the switch's board-side terminal.
 - **Outside 3.0–4.2 V:** check both 100 kΩ resistors.
 
 ### Power and charging
 
 These can't be tested over USB, so check them by hand:
 
-1. Unplug USB and switch on. The ring lights, and the board's `3V` pin reads about 3.3 V.
+1. Unplug USB and switch on. The board's `3V` pin reads about 3.3 V.
 2. Plug in USB with the switch on. The board's charge LED lights while the battery charges.
 3. Switch off with USB still plugged in. The battery stops charging, but the board keeps running from USB.
 
 ## Known limitations
 
 - **Charging only while switched on.** The switch disconnects the battery from the charger as well as from the board.
-- **The ring may glow when switched off.** With the switch off and USB connected, the ring can glow, because the charger drives the empty battery terminal. This is expected.
+- **No power light.** The switch isn't lit. The unit's own LEDs show its state only while the firmware runs.
 - **Battery life.** With the radio and the sensor running continuously, expect roughly 15–25 hours from a full charge. Charging from empty takes about 4–5 hours at the charger's 400 mA. Both are estimates; measure them and record the results here.
-- **Indoor use only.** The sensor aperture is open, so the unit must stay out of rain.
+- **Indoor use only.** The sensor aperture is open and the switch isn't waterproof, so the unit must stay out of rain.
 - **Sensor range.** In short distance mode, the VL53L1X reaches about 1.3 m, even in strong ambient light. Long distance mode reaches up to 3.6 m in the dark, but only about 0.7 m in strong light. Dark or glossy paint weakens the signal. Below 4 cm, the sensor still detects a target, but the distance isn't accurate.
 
 ## Notes for the firmware
@@ -365,7 +359,7 @@ The 3D-printed enclosure that replaces the standard box keeps the same face layo
 - **Sensor:** the sensor chip flush behind an aperture of at least 8 mm, with the wall no thicker than 2 mm around the aperture and a matte inside surface. No window: adding one needs crosstalk calibration and a new decision.
 - **Battery pocket:** about 52 × 36 × 10 mm, with retention, at least 10 mm from the board's antenna.
 - **Antenna:** keep the area around it free of metal. Print in PLA, PETG or ASA, not in carbon-filled filament, which can block the radio.
-- **Switch:** a 19 mm hole in a wall no thicker than the switch's thread allows.
+- **Switch:** a 15 mm round hole in a wall thin enough for the switch's spring clips to catch behind it.
 - **LEDs and buzzer:** holes for the LED bezels and the buzzer's sound holes, as in the standard box.
 - **Mounting:** holes or keyhole slots on the base.
 - **Symmetry:** no openings on the long walls, so one print serves both sides of the passage.

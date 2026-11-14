@@ -27,7 +27,7 @@ The unit is built from these parts:
 - **Buzzer:** a YL-44 active buzzer module ([dratek.cz 849](https://dratek.cz/arduino-platforma/849-eses-akusticky-bzucak-pro-jednodeskove-pocitace.html)), powered from 3.3 V so that the ESP32's 3.3 V logic can switch it fully off.
 - **Indicators:** one green and one red 5 mm LED, each driven straight from a GPIO through a 220 Ω resistor.
 - **Battery:** an 803450 Li-Po cell, 3.7 V, 1500 mAh, plugged into the board's JST-PH connector through an extension lead.
-- **Power switch:** a latching 19 mm switch with a 6 V white LED ring, in series with the battery's positive lead. The ring is wired across the switched battery line and works as a power light.
+- **Power switch:** a mini round rocker switch, ON-OFF, single pole, rated 250 V / 3 A, that snaps into a 15 mm round hole ([rasel.cz 056-151](https://www.rasel.cz/kolebkovy-vypinac-0-1-250v-3a-mini-p17388/)), in series with the battery's positive lead. It carries at most 4.2 V and the board's and the charger's current.
 - **Battery monitoring:** optional. A 100 kΩ / 100 kΩ divider from the switched battery line to GPIO35. The firmware must work without it.
 - **Construction:** wires soldered point to point, with no carrier board.
 - **Enclosure:** a 120 × 80 × 50 mm IP65 PS/ABS box ([dratek.cz 1442](https://dratek.cz/arduino-platforma/1442-plastova-prumyslova-krabicka-ip65.html)) for the first prototype, with a USB-C panel-mount extension for charging and flashing. A 3D-printed enclosure with a USB-C slot follows later.
@@ -47,8 +47,9 @@ The pin assignments, wiring and assembly steps are in [device/prototype-assembly
 
 - The board does not expose GPIO21, so the sensor's I2C bus uses GPIO18 (SCL) and GPIO19 (SDA), which are MicroPython's defaults for `I2C(0)`.
 - The board has no battery voltage divider and no 5 V or battery pin on its header. Without the optional divider, the unit cannot report its battery level.
-- The battery charges only while the switch is on. With the switch off and USB connected, the board still runs from USB, and the power ring may glow because the charger drives the empty battery terminal.
+- The battery charges only while the switch is on. With the switch off and USB connected, the board still runs from USB.
+- The switch has no light, so the unit has no power light. While the firmware isn't running, only the rocker's position shows whether the unit is on.
 - With the radio and the sensor running continuously, a full battery is expected to last roughly a day. The power switch is what keeps the unit from draining between uses, until the firmware gains a low-power mode.
 - The VL53L0X reads reliably from a few centimetres to about 1.2 m indoors. It gets weaker on dark or glossy paint, and readings closer than about 3 cm are unreliable.
 - The YL-44 is quieter at 3.3 V than at 5 V.
-- The open sensor aperture makes the unit unsuitable for outdoor use. Moving outdoors needs a new decision on sealing the sensor.
+- The open sensor aperture and the switch, which isn't waterproof, make the unit unsuitable for outdoor use. Moving outdoors needs a new decision on sealing them.

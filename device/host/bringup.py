@@ -214,7 +214,7 @@ def check_battery(unit: Unit) -> Result:
     if volts < 0.5:
         return failed(
             "Pin 35 reads about 0 V.",
-            "Is the unit switched on? The divider's top must go to the switch's LED + terminal.",
+            "Is the unit switched on? The divider's top must go to the switch's board-side terminal.",
         )
     if not 2.9 <= volts <= 4.3:
         return failed(f"{volts:.2f} V is outside 3.0–4.2 V.", "Check both 100 kΩ resistors.")

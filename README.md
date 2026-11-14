@@ -30,7 +30,7 @@ The first prototype of the remote device is built from off-the-shelf parts:
 - **VL53L1X laser time-of-flight (ToF) distance sensor**
 - **YL-44 active buzzer module** for audible signalling
 - **Li-Po battery 803450**, 3.7 V, 1500 mAh
-- **Waterproof 19 mm latching switch** with white LED backlight, used as the power switch and power light
+- **Mini round rocker switch**, ON-OFF, for a 15 mm hole, used as the power switch
 - **Green and red 5 mm LED** for visual status
 - **IP65 plastic box**, 120 × 80 × 50 mm, to house the electronics at the passage. A 3D-printed enclosure will follow.
 
