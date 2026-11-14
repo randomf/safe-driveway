@@ -26,6 +26,9 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
             implementation(libs.compose.components.resources)
+            implementation(libs.compose.material.icons.core)
+            implementation(libs.compose.ui.tooling.preview)
+            implementation(libs.navigation3.ui)
             implementation(libs.kable)
         }
         androidMain.dependencies {
@@ -36,6 +39,11 @@ kotlin {
             implementation(libs.kotlin.test)
         }
     }
+}
+
+// Android Studio renders the @Preview functions in commonMain with this.
+dependencies {
+    "androidRuntimeClasspath"(libs.compose.ui.tooling)
 }
 
 compose.resources {

@@ -5,7 +5,8 @@ This folder holds the mobile app that runs on the phone in the car, and the task
 | Path | What it is |
 |---|---|
 | [features.md](features.md) | What the first version of the app does |
-| [shared/](shared/) | The code for both platforms: the logic, the BLE connections and the screens, in Compose Multiplatform. Its texts are in `shared/src/commonMain/composeResources/`, in English (`values/`) and Czech (`values-cs/`) |
+| [screens.md](screens.md) | What each screen shows, and how the driver moves between them |
+| [shared/](shared/) | The code for both platforms: the logic, the BLE connections and the screens, in Compose Multiplatform. Its texts are in `shared/src/commonMain/composeResources/`, in English (`values/`) and Czech (`values-cs/`). For now the screens run on a demo backend instead of the units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)) |
 | [androidApp/](androidApp/) | The Android application around `shared/`: its manifest, with the Bluetooth permissions, its icon and its activity, whose screen `shared/` sets. It has no Compose code of its own |
 | [justfile](justfile) | The tasks listed under [Tasks](#tasks) |
 | [tools/Doctor.java](tools/Doctor.java) | The check that `just doctor` runs |
@@ -64,6 +65,12 @@ ANDROID_SERIAL=emulator-5554 just run
 Run `just lint` before finishing a change. The code style is ktlint's Android Studio style, set in [.editorconfig](.editorconfig), so *Code > Reformat Code* in Android Studio and `just fmt` agree.
 
 The emulator that Android Studio's wizard creates runs the app, but it has no real Bluetooth: test anything that talks to the units on a phone.
+
+## Demo panel
+
+For now the app has no BLE code: its screens run on pretend units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)), so they work on any phone or the emulator. In a debug build, such as `just run` installs, the **Demo** tab on the right edge of every screen opens the demo panel. It chooses which passages are in range and which problems the units have, and *Play a pass* drives a simulated car through the open passage. The demo's own passages have the PIN 1234, and a passage set up in the demo has the PIN given to it. [screens.md](screens.md#demo-panel) lists what it can do.
+
+The screens' `@Preview` functions, in `shared/src/commonMain/kotlin/.../ui/Previews.kt`, show the main states in Android Studio.
 
 ## Versions
 

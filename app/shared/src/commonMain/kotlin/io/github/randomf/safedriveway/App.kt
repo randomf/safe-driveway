@@ -1,89 +1,94 @@
 package io.github.randomf.safedriveway
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.juul.kable.Bluetooth
 import com.juul.kable.ExperimentalKableApi
-import io.github.randomf.safedriveway.resources.Res
-import io.github.randomf.safedriveway.resources.allow_bluetooth
-import io.github.randomf.safedriveway.resources.bluetooth_checking
-import io.github.randomf.safedriveway.resources.bluetooth_not_supported
-import io.github.randomf.safedriveway.resources.bluetooth_off
-import io.github.randomf.safedriveway.resources.bluetooth_permission_blocked
-import io.github.randomf.safedriveway.resources.bluetooth_permission_needed
-import io.github.randomf.safedriveway.resources.bluetooth_ready
-import io.github.randomf.safedriveway.resources.greeting
-import io.github.randomf.safedriveway.resources.open_settings
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
+import io.github.randomf.safedriveway.demo.DemoBackend
+import io.github.randomf.safedriveway.demo.DemoBluetooth
+import io.github.randomf.safedriveway.demo.DemoButton
+import io.github.randomf.safedriveway.ui.AppNavigation
+import io.github.randomf.safedriveway.ui.AppTheme
+import io.github.randomf.safedriveway.ui.start.BluetoothScreen
+import io.github.randomf.safedriveway.ui.start.NoticeScreen
 
-/** The app's only screen: a greeting and the state of Bluetooth. Dark by default (features.md). */
-@OptIn(ExperimentalKableApi::class)
+/** What the platform tells the app about itself. [debug] shows the demo panel. */
+data class AppInfo(val version: String, val debug: Boolean)
+
+/**
+ * The app: the driving-aid notice, then the Bluetooth check, then the screens. The prototype runs
+ * on the demo backend, with no Bluetooth of its own (ADR 0009).
+ */
 @Composable
-fun App() {
-    MaterialTheme(colorScheme = darkColorScheme()) {
-        val access = rememberBluetoothAccess()
-        val supported by produceState<Boolean?>(null) { value = Bluetooth.isSupported() }
-        val status =
-            bluetoothStatus(supported, access.permitted, access.permissionBlocked, access.on)
+fun App(info: AppInfo) {
+    AppTheme {
+        val scope = rememberCoroutineScope()
+        val backend = remember { DemoBackend(scope) }
+        val demo by backend.settings.collectAsState()
+        var noticeAccepted by rememberSaveable { mutableStateOf(false) }
 
         Surface(Modifier.fillMaxSize()) {
-            Column(
-                Modifier.safeDrawingPadding().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    stringResource(Res.string.greeting),
-                    style = MaterialTheme.typography.displaySmall,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    stringResource(status.message),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center
-                )
-                status.action?.let { action ->
-                    Button(onClick = access.requestPermission) {
-                        Text(stringResource(action))
+            Box(Modifier.fillMaxSize()) {
+                if (!noticeAccepted) {
+                    NoticeScreen { noticeAccepted = true }
+                } else {
+                    BluetoothGate(demo.bluetooth, {
+                        backend.changeSettings { it.copy(bluetooth = DemoBluetooth.Phone) }
+                    }) {
+                        AppNavigation(backend, info.version)
                     }
                 }
+                if (info.debug) DemoButton(backend, Modifier.align(Alignment.CenterEnd))
             }
         }
     }
 }
 
-private val BluetoothStatus.message: StringResource
-    get() =
-        when (this) {
-            BluetoothStatus.Checking -> Res.string.bluetooth_checking
-            BluetoothStatus.NotSupported -> Res.string.bluetooth_not_supported
-            BluetoothStatus.PermissionNeeded -> Res.string.bluetooth_permission_needed
-            BluetoothStatus.PermissionBlocked -> Res.string.bluetooth_permission_blocked
-            BluetoothStatus.Off -> Res.string.bluetooth_off
-            BluetoothStatus.Ready -> Res.string.bluetooth_ready
+/**
+ * Shows [content] once Bluetooth is ready, and the Bluetooth screen over it whenever it isn't. The
+ * demo can pretend a problem; [onFixDemo] ends the pretence.
+ */
+@Composable
+private fun BluetoothGate(
+    demo: DemoBluetooth,
+    onFixDemo: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val (status, fix) = when (demo) {
+        DemoBluetooth.Phone -> phoneBluetooth()
+        DemoBluetooth.Off -> BluetoothStatus.Off to onFixDemo
+        DemoBluetooth.PermissionNeeded -> BluetoothStatus.PermissionNeeded to onFixDemo
+        DemoBluetooth.NotSupported -> BluetoothStatus.NotSupported to onFixDemo
+    }
+    // The screens start once Bluetooth has been ready, and stay put while it's off for a moment.
+    var started by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(status) { if (status == BluetoothStatus.Ready) started = true }
+    Box(Modifier.fillMaxSize()) {
+        if (started) content()
+        if (status != BluetoothStatus.Ready) {
+            Surface(Modifier.fillMaxSize()) { BluetoothScreen(status, fix) }
         }
+    }
+}
 
-/** The label of the button that fixes the problem, where the app can help. */
-private val BluetoothStatus.action: StringResource?
-    get() =
-        when (this) {
-            BluetoothStatus.PermissionNeeded -> Res.string.allow_bluetooth
-            BluetoothStatus.PermissionBlocked -> Res.string.open_settings
-            else -> null
-        }
+@OptIn(ExperimentalKableApi::class)
+@Composable
+private fun phoneBluetooth(): Pair<BluetoothStatus, () -> Unit> {
+    val access = rememberBluetoothAccess()
+    val supported by produceState<Boolean?>(null) { value = Bluetooth.isSupported() }
+    return bluetoothStatus(supported, access.permitted, access.permissionBlocked, access.on) to
+        access.requestPermission
+}

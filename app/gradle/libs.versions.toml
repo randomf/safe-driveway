@@ -14,6 +14,11 @@ compose-multiplatform = "1.12.2"
 # The Material3 release that Compose Multiplatform 1.12.2 is paired with. JetBrains publishes it
 # only as alpha.
 compose-material3 = "1.12.0-alpha03"
+# The last release of the Material icons. They stopped there, but they're plain vectors and keep
+# working with later Compose releases.
+compose-material-icons = "1.7.3"
+# JetBrains' multiplatform build of androidx Navigation 3 (ADR 0009).
+navigation3 = "1.2.0"
 # Kable hasn't reached 1.0, so an upgrade is tested against a real unit (ADR 0006).
 kable = "0.45.0"
 androidx-activity = "1.13.0"
@@ -27,6 +32,10 @@ compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", v
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-material3" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose-multiplatform" }
+compose-material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "compose-material-icons" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose-multiplatform" }
+compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "compose-multiplatform" }
+navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 kable = { module = "com.juul.kable:kable-core", version.ref = "kable" }
 androidx-activity = { module = "androidx.activity:activity", version.ref = "androidx-activity" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }

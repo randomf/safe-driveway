@@ -28,7 +28,7 @@ Everything for the mobile app that runs on the phone in the car. `app/` is the r
 - App configuration, dependencies and build files: the Gradle build and its wrapper, `.editorconfig` and `app/gradle/libs.versions.toml`
 - App assets (icons, images, sounds, fonts, translations)
 - App tests, next to the code they test, such as `app/shared/src/commonTest/`
-- App documentation, such as [app/features.md](app/features.md)
+- App documentation, such as [app/features.md](app/features.md) and [app/screens.md](app/screens.md)
 
 ### `doc/` — shared documentation and architecture decisions
 
@@ -55,6 +55,7 @@ GitHub Actions workflows in `.github/workflows/`, one per area that CI checks, s
 - Keep the repository root for project-level files only: `README.md`, `AGENTS.md`, `LICENSE`, the VS Code workspace `safe-driveway.code-workspace` and similar. `device/` and `app/` are folders of their own in the workspace.
 - Add every device task to `device/justfile` as a `just` task. Set the MicroPython version only in `device/micropython.toml`.
 - Add every app task to `app/justfile` as a `just` task. Set the app's library and plugin versions, and the Android versions it supports, only in `app/gradle/libs.versions.toml`. The exceptions are the ones [app/README.md](app/README.md#versions) lists: Gradle, the JDK, and the toolchain resolver plugin, which `app/settings.gradle.kts` has to name before the catalog is available.
+- Write code in a functional style wherever the language allows: immutable data, pure functions that return new values, and `map`, `filter` and folds over loops that mutate. Arrange it as a functional core and an imperative shell: side effects such as Bluetooth, storage, hardware, the clock and UI state stay in a thin shell around pure logic, as the app's `passage` package shows. On the board, a loop that runs many times a second may reuse its buffers to spare MicroPython's garbage collector.
 - Code in `app/shared/src/commonMain/` has to build for iOS too: put anything that uses an Android API in `src/androidMain/`. Put every text the app shows in its string resources, in English and Czech.
 - Run `just lint` in `device/` before finishing a change to device code, and in `app/` before finishing a change to app code.
 - The project is licensed under the license in [LICENSE](LICENSE). Do not modify it.
