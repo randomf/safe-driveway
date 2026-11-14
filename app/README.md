@@ -75,6 +75,45 @@ For now the app has no BLE code: its screens run on pretend units ([ADR 0009](..
 
 The screens' `@Preview` functions, in `shared/src/commonMain/kotlin/.../ui/Previews.kt`, show the main states in Android Studio.
 
+## Screenshots
+
+The screenshots in [screenshots/](screenshots/) appear in [screens.md](screens.md), in this file and in the repository's [README](../README.md). When a screen's look changes, retake every screenshot of it ([AGENTS.md](../AGENTS.md)):
+
+1. Start the emulator that Android Studio's wizard creates, with the app in English, and install the debug build on it:
+
+   ```bash
+   ANDROID_SERIAL=emulator-5554 just run
+   ```
+
+2. Give the status bar a fixed clock, a full battery and no notifications, with SystemUI's demo mode. Use the SDK's adb, see [Phone over USB on Linux](#phone-over-usb-on-linux):
+
+   ```bash
+   adb shell settings put global sysui_demo_allowed 1
+   adb shell am broadcast -a com.android.systemui.demo -e command enter
+   adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 1200
+   adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false
+   adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
+   ```
+
+3. Put the screen in the state the table below gives, with the [demo panel](#demo-panel), and take it at full size. For a pass, take a few in a row and keep the one that matches:
+
+   ```bash
+   adb exec-out screencap -p > shot.png
+   ```
+
+4. Save it under the same name at half size, 540 × 1200, as a PNG with 256 colours. Where the **Demo** tab lies over plain background, paint it out with the background around it; `demo-panel.png` keeps it.
+5. Update the image's `alt` text where it's shown, which says what the screenshot shows, such as the gaps.
+
+| File | Screen and state |
+|---|---|
+| `main-screen.png` | The garage during a *Tight* pass, forwards from the usual end, with only gate 1 seeing the car |
+| `critical.png` | The garage during a *Too close* pass, with both gates seeing the car and the gap below the critical gap |
+| `unit-details.png` | The details of *Bins*, with the *Low battery* and *Setup out of date* problems on |
+| `notices-sheet.png` | The notices, with the same problems on |
+| `passages.png` | The passages list, with the garage in range |
+| `units-and-gates.png` | The garage's *Units and gates*, from *Change the setup* with PIN 1234 |
+| `demo-panel.png` | The demo panel over the garage's main screen, with *Tight* chosen |
+
 ## Versions
 
 Every library and Gradle plugin version is in [gradle/libs.versions.toml](gradle/libs.versions.toml), with the Android versions the app supports. Three things are set elsewhere:
