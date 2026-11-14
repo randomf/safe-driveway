@@ -20,8 +20,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
+        <!-- Compose redraws the screen when it turns, or night or car mode starts, so the
+             activity isn't recreated: the connections and the screens' state stay as they are.
+             The app is always dark, so night mode changes nothing on screen. -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

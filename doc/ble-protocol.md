@@ -16,7 +16,7 @@ This document describes protocol version **1**.
 ### Units, passages, gates and sides
 
 - **Unit ID:** the ESP32's 6-byte factory MAC address, as `machine.unique_id()` returns it. It is written as 12 hex digits, and its **short ID** is the last 4 in upper case: `08ad0a5b9fb8` is `9FB8`. `just bringup board` prints it.
-- **End 0:** the end of the passage that gate positions are measured from.
+- **End 0:** the end of the passage that gate positions are measured from. The app makes it the end the driver usually drives in from.
 - **Gate index:** gates are numbered 0 to 3 in order of their position, gate 0 nearest end 0.
 - **Side:** 0 is left, 1 is right, as seen standing at end 0 and looking along the passage. The app turns this into the driver's left and right from the end the car enters by and whether it is reversing.
 - **Gap:** a *valid* reading's distance minus the unit's zero offset. It can be negative. Readings with any other status have no gap.
@@ -269,9 +269,18 @@ Switch the unit off and on, connect within 2 minutes, Set PIN with the new PIN, 
 2. In the record, replace the old unit's ID with the new unit's, raise the setup version, and commit it to every unit, the new one included.
 3. If the old unit can still be reached, Unlock and Forget it. If it can't, the app forgets it when it next finds it, see [Connecting to a passage](#connecting-to-a-passage).
 
+### Adding a unit
+
+1. On the new, unassigned unit, Set PIN with the passage's PIN.
+2. Add its entry to the record, with a new gate if it needs one, raise the setup version, and commit it to every unit, the new one included.
+
 ### Forgetting a unit
 
 Commit a record without the unit, with a raised setup version, to the passage's other units. If the forgotten unit can be reached, Unlock and Forget it.
+
+### Deleting a passage
+
+Unlock and Forget every unit of the passage in reach. A unit out of reach keeps its record, since no other record says the passage is gone: when it comes back, the passage shows up again with that unit only, and deleting it again resets it.
 
 ## Examples
 
