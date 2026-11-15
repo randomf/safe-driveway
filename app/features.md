@@ -44,7 +44,7 @@ This file describes what the first version supports, and [screens.md](screens.md
 
 ### Setting up and sharing a passage
 
-The passage's setup, including the list of all its units, is stored on every one of its units, with a version number, so that any phone can read it and knows how many units to expect. Each phone stores only the passages it has used, its driver's preferences (whether they drive into the passage forwards or reverse in, sound on or off, and the volume) and the passage PIN once it has been entered on that phone, encrypted with a key that the platform's secure storage holds ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)).
+The passage's setup, including the list of all its units, is stored on every one of its units, with a version number, so that any phone can read it and knows how many units to expect. Each phone stores only the passages it has used, its driver's preferences (whether they drive into the passage forwards or reverse in, sound on or off, and the volume) and the passage PIN once it has been entered on that phone, with the PIN before the last change it made, encrypted with a key that the platform's secure storage holds ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)).
 
 The first phone sets up a passage like this:
 
@@ -61,6 +61,7 @@ After that:
 - Any phone with the app can connect to the passage and show its readings. A second phone opened near the units finds the passage and works straight away.
 - Changing the setup needs the passage PIN, of 4 to 8 digits. The PIN guards against accidents and casual mischief, not against a determined attacker, because it travels over BLE unencrypted. A forgotten PIN is reset by switching each unit off and on and setting a new PIN within 2 minutes. After 5 wrong PINs in a row, a unit refuses the PIN until it is switched off and on.
 - If a unit was switched off while the setup changed, the units disagree. The app uses the setup with the highest version number. If the phone knows the PIN, it writes that setup to the units that are behind; otherwise it shows them as out of date.
+- A unit that was switched off while this phone changed the PIN still holds the old one. The phone unlocks it with the old PIN and gives it the new one. A unit that refuses every PIN the phone knows makes the phone forget them, rather than use up the unit's tries each time it connects; the driver types the PIN the next time it's needed.
 - A unit that was forgotten or replaced while out of reach still carries the passage's ID when it comes back. A phone that knows the PIN resets it to a unit that belongs to no passage; other phones leave it alone.
 - The app remembers every passage it has used, for example a garage and a gate. Removing a passage from a phone forgets it, its PIN and the driver's preferences on that phone; the units keep it, and it comes back when the phone next opens it.
 - Deleting a passage, with its PIN, resets every unit in reach to belong to no passage and removes the passage from that phone. A unit out of reach keeps the passage: when it comes back, the passage shows up again with that unit only, to be deleted again.

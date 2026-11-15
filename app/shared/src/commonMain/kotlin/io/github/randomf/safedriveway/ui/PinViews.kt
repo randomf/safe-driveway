@@ -35,6 +35,7 @@ import io.github.randomf.safedriveway.resources.pin_locked_out
 import io.github.randomf.safedriveway.resources.pin_mismatch
 import io.github.randomf.safedriveway.resources.pin_prompt
 import io.github.randomf.safedriveway.resources.pin_title
+import io.github.randomf.safedriveway.resources.pin_unchecked
 import io.github.randomf.safedriveway.resources.pin_wrong
 import io.github.randomf.safedriveway.resources.repeat_pin
 import io.github.randomf.safedriveway.resources.unlock
@@ -65,6 +66,7 @@ fun PinDialog(
                 when (result) {
                     UnlockResult.WrongPin -> ErrorText(stringResource(Res.string.pin_wrong))
                     UnlockResult.LockedOut -> ErrorText(stringResource(Res.string.pin_locked_out))
+                    UnlockResult.Unchecked -> ErrorText(stringResource(Res.string.pin_unchecked))
                     else -> {}
                 }
                 TextButton(onClick = onForgot) { Text(stringResource(Res.string.forgot_pin)) }

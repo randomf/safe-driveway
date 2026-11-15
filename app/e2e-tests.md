@@ -2,7 +2,7 @@
 
 These tests check the app against a real unit: the connections, the commands, the sounds and what the units do when the app lets go ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)). The unit tests in `shared/src/commonTest/` cover the pure logic; only these cover the radio. Replay them after a change to how the app talks to the units, its storage or its sounds, and after a Kable upgrade ([ADR 0006](../doc/adr/0006-kotlin-multiplatform-app.md#consequences)).
 
-They were first run on 2026-11-15 on a Pixel 9 Pro with Android 17 and one unit with firmware 0.1.0, and all passed.
+They were first run on 2026-11-15 on a Pixel 9 Pro with Android 17 and one unit with firmware 0.1.0, and all passed. Test 15 was added with the fixes from the PR's review, and passed too.
 
 ## Setup
 
@@ -101,9 +101,9 @@ Needs the person. Start a watcher that presses Home 2 s after the unit sees some
 
 ### 9. In use by another phone
 
-Go back to the passages list and wait a few seconds. Run `just ble watch --seconds 25` in the background. About 10 s later, take a screenshot, then open the passage.
+Go back to the passages list, and take a screenshot at once. Run `just ble watch --seconds 25` in the background. About 10 s later, take a screenshot, then open the passage.
 
-**Passes when** the passage card says *In use by another phone*, and the main screen's notice strip and the unit's chip say the unit is in use. After the computer lets go, the unit's log shows `sensor off` and then `phone connected`, and the app connects by itself within a few seconds.
+**Passes when** the card first says *In range*, though the unit still advertises as in use by this phone for a few seconds. Then it says *In use by another phone*, and the main screen's notice strip and the unit's chip say the unit is in use. After the computer lets go, the unit's log shows `sensor off` and then `phone connected`, and the app connects by itself within a few seconds.
 
 ### 10. Demo mode
 
@@ -139,6 +139,18 @@ Ask the person to keep the sensor's view clear for 6 minutes, and leave the main
 
 **Passes when**, 5 minutes after the last reading of a car, the app's log shows `no car for 5m: pausing`, the unit's log shows `Release: done`, and the main screen shows the pause message with *Reconnect*. Tapping *Reconnect* connects again within about 10 s.
 
+### 15. A unit that missed a change of the PIN
+
+Open the passage, then *Change the setup* and *Change the PIN*. Type a second test PIN in both fields, then *Done* and *Save*. Go back to the passages list, wait a few seconds, and put the old PIN back on the unit from this computer, as a unit that was off during the change still has it:
+
+```bash
+just ble set-pin --pin <old PIN> --old <new PIN>
+```
+
+Open the passage and *Change the setup* again, lower the warning gap a step, then *Done* and *Save*. Finally, change the PIN back to the demo's.
+
+**Passes when** the change gives `Set PIN: done` in the unit's log. The second *Change the setup* opens with no PIN dialog, after `Unlock: wrong PIN` and `Unlock: done` in the unit's log: the phone fell back to the PIN before. Saving then gives `Set PIN: done` before `Commit: done`, so the unit holds the current PIN again.
+
 ## Report
 
-Say which tests passed, and for each one that failed or was skipped, what happened and why. Note what the tests can't reach with one unit: several units, the phone's connection limit, and a unit that was forgotten while out of reach. After test 14, the unit belongs to the passage set up in test 13, with the demo's PIN, which the phone remembers.
+Say which tests passed, and for each one that failed or was skipped, what happened and why. Note what the tests can't reach with one unit: several units, the phone's connection limit, a unit that was forgotten while out of reach, and *Update* in the notices, which needs a unit that holds an older setup. After test 15, the unit belongs to the passage set up in test 13, with the demo's PIN, which the phone remembers.

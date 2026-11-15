@@ -39,6 +39,7 @@ import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -50,6 +51,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
@@ -89,9 +91,8 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
     override val nearby: StateFlow<Nearby> = _nearby
 
     override val remembered: StateFlow<List<RememberedPassage>> =
-        state.map {
-            it.remembered()
-        }.stateIn(scope, SharingStarted.Eagerly, state.value.remembered())
+        state.map { it.stored }.distinctUntilChanged().map { it.remembered() }
+            .stateIn(scope, SharingStarted.Eagerly, state.value.stored.remembered())
 
     override val open: StateFlow<OpenPassage?> =
         state.map { it.openPassage() }.stateIn(scope, SharingStarted.Eagerly, null)
@@ -115,12 +116,8 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
     /** Each unit's last link while it lets go, so that the next waits for it. */
     private val stopping = mutableMapOf<UnitId, Job>()
 
-    /**
-     * When the app let go of each unit. For a moment after, the unit still advertises as in use,
-     * by this phone.
-     */
-    private val letGoAt = mutableMapOf<UnitId, ComparableTimeMark>()
     private var scanJob: Job? = null
+    private var signalsAt: ComparableTimeMark? = null
     private var scanStarted: ComparableTimeMark? = null
     private var goingInactive: Job? = null
     private var writeJob: Job? = null
@@ -130,12 +127,16 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
     /** When each unit being reset was first seen in its PIN reset window. */
     private val windowSeenAt = mutableMapOf<UnitId, ComparableTimeMark>()
 
+    /** What the phone stored last, so that closing saves only a change. */
+    private var saved = state.value.stored
+
     init {
-        // Saves whenever what the phone stores changes.
+        // Saves what the phone stores when it changes, the latest only, at most every SAVE_EVERY:
+        // a slider being dragged would otherwise save dozens of times a second.
         scope.launch {
-            state.map { it.stored }.distinctUntilChanged().drop(1).collect { stored ->
-                val bytes = encodeStored(stored)
-                withContext(Dispatchers.Default) { storage.save(bytes) }
+            state.map { it.stored }.distinctUntilChanged().drop(1).conflate().collect { stored ->
+                save(stored)
+                delay(SAVE_EVERY)
             }
         }
         scope.launch {
@@ -172,14 +173,28 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
         }
     }
 
-    /** Lets go of every unit, as when the app goes to the background, and stops for good. */
+    private suspend fun save(stored: Stored) {
+        saved = stored
+        val bytes = encodeStored(stored)
+        withContext(Dispatchers.Default) { storage.save(bytes) }
+    }
+
+    /**
+     * Lets go of every unit, as when the app goes to the background, saves what is left to save,
+     * and stops for good. A write under way stops with it.
+     */
     fun close() {
         val keep = keepWarning()
+        listOf(goingInactive, writeJob, pinResetJob, scanJob).forEach { it?.cancel() }
+        // Nothing is wanted any more, so the tick starts no link while these stop.
+        update { it.copy(active = false, links = emptyMap()) }
         val all = links.toMap()
         links.clear()
         scope.launch {
-            scanJob?.cancel()
-            all.map { (id, link) -> launch { link.stop(release = id !in keep) } }.joinAll()
+            withContext(NonCancellable) {
+                all.map { (id, link) -> launch { link.stop(release = id !in keep) } }.joinAll()
+                state.value.stored.takeIf { it != saved }?.let { save(it) }
+            }
             scope.cancel()
         }
     }
@@ -223,12 +238,15 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
     private fun tick() {
         val now = clock.markNow()
         update { s -> s.copy(sightings = s.sightings.filterValues { it.isFresh(now) }) }
+        // Every advertisement carries a signal strength; the screens take it once a second.
+        if (signalsAt?.let { now - it >= SIGNALS_EVERY } != false) {
+            signalsAt = now
+            update { it.withSignals() }
+        }
         val s = state.value
         if (s.active) {
             val settled = scanStarted?.let { now - it > SCAN_SETTLES } == true
-            val connected = s.links.filterValues { it.connection == Connection.Connected }.keys
-            val justLetGo = letGoAt.filterValues { now - it < Sighting.LASTS }.keys
-            _nearby.value = nearbyOf(s.sightings.values, connected + justLetGo, settled)
+            _nearby.value = nearbyOf(s.sightings.values, s::inUseByAnother, settled)
         }
         val passage = s.openPassage()
         if (passage != null && carSeen(passage.setup, passage.units, now)) {
@@ -264,7 +282,6 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
         (links.keys - wanted).forEach { id ->
             val link = links.remove(id) ?: return@forEach
             update { it.copy(links = it.links - id) }
-            letGoAt[id] = clock.markNow()
             stopping[id] = scope.launch { link.stop(release = id !in keep) }
         }
         (wanted - links.keys).forEach { id ->
@@ -300,26 +317,50 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
             adopt(record)
         }
         val newest = state.value.open?.setup ?: return
-        val pin = s.stored.passage(open.id)?.pin
+        val pins = pinsOf(open.id)
         val setUp = link.id in s.busy || link.id in s.setupReadingUnits
         val linkState = state.value.link(link.id) ?: return
         scope.launch {
             when {
                 newest.unit(link.id) == null && record?.id == open.id && !setUp -> {
                     log("${link.id} isn't in setup version ${newest.version}: forgetting it")
-                    if (pin != null) forget(link, pin)
+                    if (pins.isNotEmpty()) forget(link, pins)
                     update { it.withOpen { o -> o.copy(ignored = o.ignored + link.id) } }
                     reconcile(keep = emptySet())
                     return@launch
                 }
 
-                linkState.isOutOfDate(newest) && record != null && pin != null &&
+                linkState.isOutOfDate(newest) && record != null && pins.isNotEmpty() &&
                     writeJob?.isActive != true -> {
                     log("${link.id} holds setup version ${record.version}: updating")
-                    commit(link, newest, oldPin = pin, newPin = null)
+                    bringLinkUpToDate(link, newest, pins)
                 }
             }
             open.unlockedWith?.let { link.unlock(it) }
+        }
+    }
+
+    /**
+     * Writes [newest] to a unit that holds an older setup. One that refuses every PIN the phone
+     * knows has a PIN this phone never had: the phone forgets its PINs rather than spend another
+     * of the unit's 5 tries on each connection, and asks the driver next time.
+     */
+    private suspend fun bringLinkUpToDate(link: Link, newest: PassageSetup, pins: List<String>) {
+        val (answer, took) = unlockWithAny(link, pins)
+        when {
+            took != null ->
+                commit(link, newest, listOf(took), newPin = pins.first().takeIf { it != took })
+
+            answer == CommandResult.WrongPin -> {
+                log("${link.id} refuses the PINs this phone knows: forgetting them")
+                update { s ->
+                    s.copy(
+                        stored = s.stored.withPassage(newest.id) {
+                            it.copy(pin = null, previousPin = null)
+                        }
+                    )
+                }
+            }
         }
     }
 
@@ -417,34 +458,33 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
         return setup.units.filter { s.connected(it.id) }.mapNotNull { links[it.id] }
     }
 
+    /**
+     * Unlocks the open passage's connected units with [pin], or with the PINs the phone knows. A
+     * typed PIN that no unit answered is unchecked; one the phone knows is trusted, and each unit
+     * checks it again when the setup is written.
+     */
     override suspend fun unlock(id: PassageId, pin: String?): UnlockResult {
-        val usePin = pin ?: state.value.stored.passage(id)?.pin ?: return UnlockResult.WrongPin
+        val pins = pin?.let(::listOf) ?: pinsOf(id).ifEmpty { return UnlockResult.WrongPin }
         val results = coroutineScope {
-            connectedUnits(id).map { link -> async { link to link.unlock(usePin) } }.awaitAll()
+            connectedUnits(id).map { link -> async { link to unlockWithAny(link, pins) } }
+                .awaitAll()
         }
+        val answers = results.map { (_, result) -> result.first }
         val outcome = when {
-            results.any { it.second == CommandResult.LockedOut } -> UnlockResult.LockedOut
-            results.any { it.second == CommandResult.WrongPin } -> UnlockResult.WrongPin
+            CommandResult.LockedOut in answers -> UnlockResult.LockedOut
+            CommandResult.WrongPin in answers -> UnlockResult.WrongPin
+            pin != null && CommandResult.Done !in answers -> UnlockResult.Unchecked
             else -> UnlockResult.Unlocked
         }
         if (outcome != UnlockResult.Unlocked) {
-            results.filter {
-                it.second == CommandResult.Done
-            }.forEach { it.first.command(Command.Lock) }
+            results.filter { (_, result) -> result.first == CommandResult.Done }
+                .forEach { (link, _) -> link.command(Command.Lock) }
             return outcome
         }
-        // A PIN that no unit could check is used, but remembered only once one has taken it.
-        val checked = results.any { it.second == CommandResult.Done }
+        // A typed PIN that a unit took is remembered.
         update { s ->
-            s.withOpen { it.copy(unlockedWith = usePin) }.copy(
-                stored = if (checked) {
-                    s.stored.withPassage(id) {
-                        it.copy(pin = usePin)
-                    }
-                } else {
-                    s.stored
-                }
-            )
+            val stored = pin?.let { typed -> s.stored.withPassage(id) { it.copy(pin = typed) } }
+            s.withOpen { it.copy(unlockedWith = pins.first()) }.copy(stored = stored ?: s.stored)
         }
         return UnlockResult.Unlocked
     }
@@ -469,10 +509,10 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
 
     /** What a write does to one unit. */
     private sealed interface UnitOp {
-        data class Commit(val setup: PassageSetup, val oldPin: String?, val newPin: String?) :
+        data class Commit(val setup: PassageSetup, val pins: List<String>, val newPin: String?) :
             UnitOp
 
-        data class Forget(val pin: String?) : UnitOp
+        data class Forget(val pins: List<String>) : UnitOp
     }
 
     /** A write in progress. [onDone] gets the units that didn't take it: failed or out of reach. */
@@ -481,20 +521,32 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
         val onDone: (missed: Set<UnitId>) -> Unit
     )
 
-    /** The PIN the passage's units hold now: the remembered one, or the one just used to unlock. */
-    private fun pinOf(id: PassageId): String? = state.value.stored.passage(id)?.pin
-        ?: state.value.open?.takeIf { it.id == id }?.unlockedWith
+    /**
+     * The PINs the passage's units may hold, the current first: the remembered one, the one before
+     * it, and the one the units were just unlocked with.
+     */
+    private fun pinsOf(id: PassageId): List<String> {
+        val stored = state.value.stored.passage(id)
+        val unlockedWith = state.value.open?.takeIf { it.id == id }?.unlockedWith
+        return listOfNotNull(stored?.pin, stored?.previousPin, unlockedWith).distinct()
+    }
 
     override fun write(setup: PassageSetup, pin: String?, forget: List<UnitId>) {
-        val oldPin = pinOf(setup.id)
-        val ops = setup.units.associate { it.id to UnitOp.Commit(setup, oldPin, pin) as UnitOp } +
-            forget.associateWith { UnitOp.Forget(oldPin) }
+        val pins = pinsOf(setup.id)
+        val current = pins.firstOrNull()
+        val ops = setup.units.associate { it.id to UnitOp.Commit(setup, pins, pin) as UnitOp } +
+            forget.associateWith { UnitOp.Forget(pins) }
         startWrite(ops, deleting = false) { _ ->
             // The phone takes the setup as the newest even if some units missed it: it brings them
-            // up to date when it next finds them.
+            // up to date when it next finds them, with the PIN they still hold.
             update { s ->
                 val stored = s.stored.withPassage(setup.id, setup) {
-                    it.copy(setup = setup, pin = pin ?: it.pin ?: oldPin)
+                    val changed = pin != null && pin != current
+                    it.copy(
+                        setup = setup,
+                        pin = pin ?: current,
+                        previousPin = if (changed) current else it.previousPin
+                    )
                 }
                 s.copy(stored = stored).withOpen { open ->
                     if (open.id != setup.id) {
@@ -513,23 +565,25 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
         }
     }
 
+    /**
+     * Writes the newest setup to the units that are behind. The driver's PIN unlocked them all, so
+     * the units that were up to date are locked again afterwards, and the phone's alarm sounds again.
+     */
     override fun bringUpToDate() {
         val passage = open.value ?: return
-        val pin = pinOf(passage.setup.id)
+        val pins = pinsOf(passage.setup.id)
         val outOfDate = passage.units.filterValues { it.outOfDate }.keys
         startWrite(
-            outOfDate.associateWith {
-                UnitOp.Commit(passage.setup, pin, null)
-            },
+            outOfDate.associateWith { UnitOp.Commit(passage.setup, pins, null) },
             deleting = false
-        ) {}
+        ) { lock() }
     }
 
     override fun deletePassage(id: PassageId) {
         val setup = state.value.open?.takeIf { it.id == id }?.setup
             ?: state.value.stored.passage(id)?.setup ?: return
-        val pin = pinOf(id)
-        startWrite(setup.units.associate { it.id to UnitOp.Forget(pin) }, deleting = true) {
+        val pins = pinsOf(id)
+        startWrite(setup.units.associate { it.id to UnitOp.Forget(pins) }, deleting = true) {
             removeFromPhone(id)
             if (state.value.open?.id == id) closePassage()
         }
@@ -565,12 +619,12 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
         val sighting = state.value.sightings.values.of(id)
         if (!state.value.connected(id)) {
             if (sighting == null) return WriteState.OutOfReach
-            if (sighting.advertised.flags.inUse) return WriteState.Failed
+            if (state.value.inUseByAnother(sighting)) return WriteState.Failed
         }
         val done = withUnit(id, CONNECT_WAIT) { link ->
             when (op) {
-                is UnitOp.Commit -> commit(link, op.setup, op.oldPin, op.newPin)
-                is UnitOp.Forget -> forget(link, op.pin)
+                is UnitOp.Commit -> commit(link, op.setup, op.pins, op.newPin)
+                is UnitOp.Forget -> forget(link, op.pins)
             }
         }
         return when {
@@ -581,66 +635,82 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
     }
 
     /**
-     * Commits [setup] to the unit: unlocks it with [oldPin] if it belongs to a passage, sets
-     * [newPin], or the passage's PIN on a new unit, stages the record and commits it, which locks
-     * the unit.
+     * Unlocks the unit with the first of [pins] it takes, the current PIN first: a unit that missed
+     * a change of the PIN still holds the one before, and a correct PIN clears its count of wrong
+     * ones. The answer to the last Unlock, and the PIN it took.
+     */
+    private suspend fun unlockWithAny(
+        link: Link,
+        pins: List<String>
+    ): Pair<CommandResult?, String?> {
+        val pin = pins.firstOrNull() ?: return null to null
+        val answer = link.unlock(pin)
+        return when {
+            answer == CommandResult.Done -> answer to pin
+            answer == CommandResult.WrongPin && pins.size > 1 -> unlockWithAny(link, pins.drop(1))
+            else -> answer to null
+        }
+    }
+
+    /**
+     * Commits [setup] to the unit: unlocks it with one of [pins] if it belongs to a passage, and
+     * sets [newPin], the passage's PIN on a new unit, or the current PIN on a unit that took an
+     * older one. Then it stages the record and commits it, which locks the unit. A unit it unlocked
+     * is locked again if anything after fails.
      */
     private suspend fun commit(
         link: Link,
         setup: PassageSetup,
-        oldPin: String?,
+        pins: List<String>,
         newPin: String?
     ): Boolean {
         val assigned = state.value.link(link.id)?.record != null
-        if (assigned && (oldPin == null || link.unlock(oldPin) != CommandResult.Done)) return false
-        val pin = newPin ?: oldPin
-        if (newPin != null || !assigned) {
-            if (pin == null || link.command(Command.SetPin, pin) != CommandResult.Done) return false
+        val took = if (assigned) unlockWithAny(link, pins).second ?: return false else null
+        val pin = newPin ?: pins.firstOrNull()
+        val setsPin = newPin != null || !assigned || took != pins.firstOrNull()
+        val pinSet = !setsPin ||
+            (pin != null && link.command(Command.SetPin, pin) == CommandResult.Done)
+        val done = pinSet && stageAndCommit(link, setup)
+        if (done) {
+            update { s -> s.withLink(link.id) { it.copy(record = setup, recordRead = true) } }
+        } else {
+            link.command(Command.Lock)
         }
+        return done
+    }
+
+    /**
+     * Stages the record and commits it. A Commit with no answer may still have taken: the unit's
+     * record tells.
+     */
+    private suspend fun stageAndCommit(link: Link, setup: PassageSetup): Boolean {
         val record = encodePassageRecord(setup)
         val result = if (link.stage(record)) link.command(Command.Commit) else null
-        // A Commit with no answer may still have taken: the unit's record tells.
-        val took = result == CommandResult.Done ||
+        return result == CommandResult.Done ||
             (result == null && link.readSetup()?.contentEquals(record) == true)
-        if (!took) {
-            link.command(Command.Lock)
-            return false
-        }
-        update { s -> s.withLink(link.id) { it.copy(record = setup, recordRead = true) } }
-        return true
     }
 
-    /** Unlocks the unit and forgets its setup and PIN: it then belongs to no passage. */
-    private suspend fun forget(link: Link, pin: String?): Boolean {
+    /**
+     * Unlocks the unit and forgets its setup and PIN: it then belongs to no passage. A unit it
+     * unlocked is locked again if Forget fails.
+     */
+    private suspend fun forget(link: Link, pins: List<String>): Boolean {
         if (state.value.link(link.id)?.record == null) return true
-        if (pin == null || link.unlock(pin) != CommandResult.Done) return false
-        if (link.command(Command.Forget) != CommandResult.Done) return false
-        update { s -> s.withLink(link.id) { it.copy(record = null) } }
-        return true
+        unlockWithAny(link, pins).second ?: return false
+        val done = link.command(Command.Forget) == CommandResult.Done
+        if (done) {
+            update { s -> s.withLink(link.id) { it.copy(record = null) } }
+        } else {
+            link.command(Command.Lock)
+        }
+        return done
     }
 
-    private fun setWriteState(id: UnitId, state: WriteState) = _writing.update { progress ->
-        progress?.copy(
-            units = progress.units.map {
-                if (it.id ==
-                    id
-                ) {
-                    it.copy(state = state)
-                } else {
-                    it
-                }
-            }
-        )
-    }
+    private fun setWriteState(id: UnitId, state: WriteState) =
+        _writing.update { it?.with(id, state) }
 
     override fun retryWrite() {
-        _writing.update { progress ->
-            progress?.copy(
-                units = progress.units.map {
-                    if (it.state == WriteState.Failed) it.copy(state = WriteState.Waiting) else it
-                }
-            )
-        }
+        _writing.update { it?.retried() }
         runWrite()
     }
 
@@ -648,8 +718,7 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
     private fun finishWrite() {
         val pending = pendingWrite ?: return
         pendingWrite = null
-        val missed = _writing.value?.units.orEmpty().filter { it.state != WriteState.Done }
-        pending.onDone(missed.map { it.id }.toSet())
+        pending.onDone(_writing.value?.missed.orEmpty())
     }
 
     override fun clearWrite() {
@@ -681,7 +750,11 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
             state.first { s ->
                 s.connected(unit) && s.link(unit)?.status?.flags?.pinResetWindow == true
             }
-            val link = links[unit] ?: continue
+            val link = links[unit]
+            if (link == null) {
+                delay(TICK)
+                continue
+            }
             setPinResetState(unit, PinResetState.Setting(secondsLeft(unit)))
             if (link.command(Command.SetPin, pin) == CommandResult.Done) {
                 link.command(Command.Lock)
@@ -712,9 +785,8 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
         return (PIN_RESET_WINDOW - elapsed).inWholeSeconds.toInt().coerceAtLeast(0)
     }
 
-    private fun setPinResetState(id: UnitId, state: PinResetState) = _pinReset.update { progress ->
-        progress?.copy(units = progress.units.map { if (it.first == id) id to state else it })
-    }
+    private fun setPinResetState(id: UnitId, state: PinResetState) =
+        _pinReset.update { it?.with(id, state) }
 
     override fun clearPinReset() {
         pinResetJob?.cancel()
@@ -727,6 +799,8 @@ class LiveBackend(private val storage: SecureStorage) : Backend {
 
     private companion object {
         val TICK = 250.milliseconds
+        val SIGNALS_EVERY = 1.seconds
+        val SAVE_EVERY = 300.milliseconds
         val SCAN_SETTLES = 1500.milliseconds
         val SCAN_RETRY = 7.seconds
 

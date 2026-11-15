@@ -159,13 +159,14 @@
     <string name="pin_reset_title">Obnovit PIN</string>
     <string name="pin_reset_waiting">Vypněte ji a zapněte</string>
     <string name="pin_title">PIN</string>
+    <string name="pin_unchecked">Žádná jednotka neodpověděla, a tak PIN nešel ověřit. Jděte k nim blíž nebo je zapněte a zkuste to znovu.</string>
     <string name="pin_wrong">Chybný PIN. Po 5 chybných PINech za sebou jednotky odmítají každý PIN, dokud je nevypnete a nezapnete.</string>
     <string name="placement_and_id">Brána %1$d · %2$s · %3$s</string>
     <string name="positions_after">cm za bránou %1$d</string>
     <string name="positions_hint">Měřte podél průjezdu, od senzorů jedné brány k senzorům další.</string>
     <string name="positions_start">%1$s je na začátku průjezdu.</string>
     <string name="positions_summary">Rozestup %1$s cm</string>
-    <string name="problem_bad_spacing">Každá brána musí být dál než ta předchozí.</string>
+    <string name="problem_bad_spacing">Každá brána musí být dál než ta předchozí a poslední nejvýš 65 m od první.</string>
     <string name="problem_bad_thresholds">Kritická mezera musí být menší než varovná.</string>
     <string name="problem_empty_gate">Každá brána potřebuje aspoň jednu jednotku. Odeberte prázdnou bránu, nebo jí dejte jednotku.</string>
     <string name="problem_name_too_long">Název je příliš dlouhý.</string>

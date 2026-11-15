@@ -50,7 +50,9 @@ data class StoredPassage(
     val setup: PassageSetup,
     val preferences: DriverPreferences = DriverPreferences(),
     /** The passage's PIN, once it has been entered on this phone. */
-    val pin: String? = null
+    val pin: String? = null,
+    /** The PIN before this phone last changed it, which a unit that was off then still holds. */
+    val previousPin: String? = null
 )
 
 /** The version of the stored format, its first byte. */
@@ -77,35 +79,46 @@ private fun encodePassage(passage: StoredPassage): ByteArray {
         u8Bytes(preferences.usualDirection.ordinal) +
         u8Bytes(if (preferences.sound) 1 else 0) +
         u8Bytes((preferences.volume * 100).roundToInt()) +
-        textBytes(passage.pin.orEmpty())
+        textBytes(passage.pin.orEmpty()) +
+        textBytes(passage.previousPin.orEmpty())
 }
 
-/** The stored state, or null when the bytes can't be read, and the phone starts afresh. */
+/**
+ * The stored state, or null when the bytes can't be read, and the phone starts afresh. A passage
+ * whose record isn't valid is left out, and the others are kept.
+ */
 fun decodeStored(bytes: ByteArray): Stored? = try {
     if (bytes.u8(0) != STORED_FORMAT) {
         null
     } else {
         bytes.items(bytes.u8(1), 2) { decodePassage(bytes, it) }?.let { (passages, choicesAt) ->
             bytes.items(bytes.u8(choicesAt), choicesAt + 1) { decodeChoice(bytes, it) }
-                ?.let { (choices, _) -> Stored(passages, choices.toMap()) }
+                ?.let { (choices, _) -> Stored(passages.filterNotNull(), choices.toMap()) }
         }
     }
 } catch (_: IndexOutOfBoundsException) {
     null
 }
 
-private fun decodePassage(bytes: ByteArray, at: Int): Pair<StoredPassage, Int>? {
+/** The passage at [at], or null in its place when its record isn't valid, and where the next starts. */
+private fun decodePassage(bytes: ByteArray, at: Int): Pair<StoredPassage?, Int>? {
     val length = bytes.u16(at)
     val after = at + 2 + length
-    val setup = decodePassageRecord(bytes.copyOfRange(at + 2, after)) ?: return null
+    val setup = decodePassageRecord(bytes.copyOfRange(at + 2, after))
     val pinLength = bytes.u8(after + 3)
     val pin = bytes.text(after + 4, pinLength) ?: return null
+    val previousAt = after + 4 + pinLength
+    val previousLength = bytes.u8(previousAt)
+    val previous = bytes.text(previousAt + 1, previousLength) ?: return null
     val preferences = DriverPreferences(
         usualDirection = Direction.entries.getOrNull(bytes.u8(after)) ?: Direction.Forwards,
         sound = bytes.u8(after + 1) != 0,
         volume = bytes.u8(after + 2).coerceIn(0, 100) / 100f
     )
-    return StoredPassage(setup, preferences, pin.ifEmpty { null }) to after + 4 + pinLength
+    val passage = setup?.let {
+        StoredPassage(it, preferences, pin.ifEmpty { null }, previous.ifEmpty { null })
+    }
+    return passage to previousAt + 1 + previousLength
 }
 
 private fun decodeChoice(bytes: ByteArray, at: Int): Pair<Pair<Set<PassageId>, PassageId>, Int>? {

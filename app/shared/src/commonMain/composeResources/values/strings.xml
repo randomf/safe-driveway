@@ -159,13 +159,14 @@
     <string name="pin_reset_title">Reset the PIN</string>
     <string name="pin_reset_waiting">Switch it off and on</string>
     <string name="pin_title">PIN</string>
+    <string name="pin_unchecked">None of the units answered, so the PIN couldn’t be checked. Go closer to them, or switch them on, and try again.</string>
     <string name="pin_wrong">Wrong PIN. After 5 wrong PINs in a row, the units refuse every PIN until they’re switched off and on.</string>
     <string name="placement_and_id">Gate %1$d · %2$s · %3$s</string>
     <string name="positions_after">cm after gate %1$d</string>
     <string name="positions_hint">Measure along the passage, from each gate’s sensors to the next gate’s.</string>
     <string name="positions_start">%1$s is where the passage starts.</string>
     <string name="positions_summary">%1$s cm apart</string>
-    <string name="problem_bad_spacing">Each gate has to be further on than the one before it.</string>
+    <string name="problem_bad_spacing">Each gate has to be further on than the one before it, and the last at most 65 m from the first.</string>
     <string name="problem_bad_thresholds">The critical gap has to be smaller than the warning gap.</string>
     <string name="problem_empty_gate">Every gate needs at least one unit. Remove an empty gate, or give it a unit.</string>
     <string name="problem_name_too_long">The name is too long.</string>

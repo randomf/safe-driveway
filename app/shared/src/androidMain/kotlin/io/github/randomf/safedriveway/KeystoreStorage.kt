@@ -6,7 +6,6 @@ import android.security.keystore.KeyProperties
 import android.util.AtomicFile
 import java.io.File
 import java.io.IOException
-import java.security.GeneralSecurityException
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -21,29 +20,38 @@ import javax.crypto.spec.GCMParameterSpec
 class KeystoreStorage(context: Context) : SecureStorage {
     private val file = AtomicFile(File(context.filesDir, "phone.bin"))
 
+    /**
+     * Any failure reads as nothing stored: a file cut short, or the Keystore failing, as it can
+     * with a runtime exception of its own, or after the app's data was restored elsewhere.
+     */
     override fun load(): ByteArray? = try {
         val bytes = file.readFully()
-        cipher(Cipher.DECRYPT_MODE, bytes.copyOf(IV_BYTES)).doFinal(
-            bytes,
-            IV_BYTES,
-            bytes.size - IV_BYTES
-        )
-    } catch (_: IOException) {
-        null
-    } catch (_: GeneralSecurityException) {
-        // The key is gone, as after the app's data was restored elsewhere: start afresh.
+        if (bytes.size <= IV_BYTES) {
+            null
+        } else {
+            cipher(Cipher.DECRYPT_MODE, bytes.copyOf(IV_BYTES))
+                .doFinal(bytes, IV_BYTES, bytes.size - IV_BYTES)
+        }
+    } catch (_: Exception) {
         null
     }
 
+    /** A failure leaves the old file, and the next change saves again. */
     override fun save(bytes: ByteArray) {
-        val cipher = cipher(Cipher.ENCRYPT_MODE, null)
-        val encrypted = cipher.iv + cipher.doFinal(bytes)
-        val out = file.startWrite()
+        val encrypted = try {
+            cipher(Cipher.ENCRYPT_MODE, null).let { it.iv + it.doFinal(bytes) }
+        } catch (_: Exception) {
+            return
+        }
+        val out = try {
+            file.startWrite()
+        } catch (_: IOException) {
+            return
+        }
         try {
             out.write(encrypted)
             file.finishWrite(out)
         } catch (_: IOException) {
-            // The old file stays; the next change saves again.
             file.failWrite(out)
         }
     }

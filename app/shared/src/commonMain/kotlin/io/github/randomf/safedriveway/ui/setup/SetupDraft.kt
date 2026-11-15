@@ -133,11 +133,16 @@ fun PassageSetup.problems(step: Step): List<SetupProblem> = when (step) {
     )
 
     Step.Positions -> listOfNotNull(
-        SetupProblem.BadSpacing.takeIf { gatePositionsMm.zipWithNext().any { (a, b) -> b <= a } }
+        SetupProblem.BadSpacing.takeIf {
+            gatePositionsMm.zipWithNext().any { (a, b) -> b <= a } ||
+                gatePositionsMm.last() > Limits.MAX_MM
+        }
     )
 
     Step.Thresholds -> listOfNotNull(
-        SetupProblem.BadThresholds.takeIf { criticalGapMm >= warningGapMm || criticalGapMm < 0 }
+        SetupProblem.BadThresholds.takeIf {
+            criticalGapMm >= warningGapMm || criticalGapMm < 0 || warningGapMm > Limits.MAX_MM
+        }
     )
 
     Step.ZeroOffsets, Step.Pin -> emptyList()

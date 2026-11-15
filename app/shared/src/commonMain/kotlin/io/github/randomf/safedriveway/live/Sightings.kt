@@ -30,14 +30,28 @@ data class Sighting(
          * heard for this long has gone out of range.
          */
         val LASTS = 4.seconds
+
+        /**
+         * How long a unit may still advertise as in use by this phone after the phone lost the
+         * link or let go: the unit notices within its 5 s supervision timeout.
+         */
+        val HELD_FOR = 6.seconds
     }
 }
 
 /**
- * What the screens see of the units in range. A unit this phone is connected to, or has just let
- * go of, advertises as in use, so these [ours] don't make their passage in use by another phone.
+ * Whether another phone holds the unit: it advertises as in use, and not because of this phone,
+ * which last held it at [heldAt].
  */
-fun nearbyOf(sightings: Collection<Sighting>, ours: Set<UnitId>, settled: Boolean): Nearby {
+fun Sighting.inUseByAnother(heldAt: ComparableTimeMark?): Boolean =
+    advertised.flags.inUse && (heldAt == null || at - heldAt > Sighting.HELD_FOR)
+
+/** What the screens see of the units in range. */
+fun nearbyOf(
+    sightings: Collection<Sighting>,
+    inUseByAnother: (Sighting) -> Boolean,
+    settled: Boolean
+): Nearby {
     val passages = sightings.filter { it.advertised.passage != null }
         .groupBy { it.advertised.passage!! }
         .mapNotNull { (id, units) ->
@@ -46,7 +60,7 @@ fun nearbyOf(sightings: Collection<Sighting>, ours: Set<UnitId>, settled: Boolea
             NearbyPassage(
                 id,
                 name,
-                inUse = units.any { it.advertised.flags.inUse && it.unit !in ours }
+                inUse = units.any(inUseByAnother)
             )
         }
         .sortedBy { it.name }

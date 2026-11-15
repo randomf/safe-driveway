@@ -33,7 +33,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -88,9 +87,10 @@ internal class Link(val id: UnitId, private val host: LinkHost, scope: Coroutine
         var failures = 0
         var phoneLimit = false
         while (true) {
-            val sighting = host.state.map { it.sightings.values.of(id) }
-                .onEach { sighting -> waiting(sighting, everConnected)?.let(::setConnection) }
-                .first { waiting(it, everConnected) == null }!!
+            val sighting = host.state
+                .onEach { state -> state.waiting(everConnected)?.let(::setConnection) }
+                .first { it.waiting(everConnected) == null }
+                .sightings.values.of(id)!!
             setConnection(
                 when {
                     phoneLimit -> Connection.PhoneLimit
@@ -124,16 +124,23 @@ internal class Link(val id: UnitId, private val host: LinkHost, scope: Coroutine
             host.onConnected(this)
             p.state.first { it is State.Disconnected }
             log("$id: disconnected")
-            set { it.copy(reading = null, recordRead = false) }
+            // Its Status is stale from now on, and for a moment it still advertises as in use.
+            host.update { state ->
+                state.withLink(id) { it.copy(status = null, reading = null, recordRead = false) }
+                    .released(id, clock.markNow())
+            }
         }
     }
 
     /** What the link shows while it can't connect yet, or null when it can try. */
-    private fun waiting(sighting: Sighting?, everConnected: Boolean): Connection? = when {
-        sighting == null -> if (everConnected) Connection.Reconnecting else Connection.Searching
-        sighting.advertised.protocolVersion > Protocol.VERSION -> Connection.NeedsNewerApp
-        sighting.advertised.flags.inUse -> Connection.InUse
-        else -> null
+    private fun LiveState.waiting(everConnected: Boolean): Connection? {
+        val sighting = sightings.values.of(id)
+        return when {
+            sighting == null -> if (everConnected) Connection.Reconnecting else Connection.Searching
+            sighting.advertised.protocolVersion > Protocol.VERSION -> Connection.NeedsNewerApp
+            inUseByAnother(sighting) -> Connection.InUse
+            else -> null
+        }
     }
 
     private fun connections() = host.state.value.links.values.count {
@@ -228,11 +235,13 @@ internal class Link(val id: UnitId, private val host: LinkHost, scope: Coroutine
      */
     suspend fun stop(release: Boolean) = withContext(NonCancellable) {
         val p = peripheral
-        if (release && p?.state?.value is State.Connected) command(Command.Release)
+        val wasConnected = p?.state?.value is State.Connected
+        if (release && wasConnected) command(Command.Release)
         job.cancel()
         if (p != null) {
             attempt("disconnecting") { withTimeoutOrNull(DISCONNECT_TIMEOUT) { p.disconnect() } }
             p.close()
+            if (wasConnected) host.update { it.released(id, clock.markNow()) }
         }
         log("$id: let go${if (release) " after Release" else ""}")
     }

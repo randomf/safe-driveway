@@ -23,7 +23,9 @@ data class LinkState(
     /** Whether the Setup characteristic has been read since the unit connected. */
     val recordRead: Boolean = false,
     /** The passage record the unit holds; null on an unassigned unit. */
-    val record: PassageSetup? = null
+    val record: PassageSetup? = null,
+    /** Signal strength in dBm from its advertising, taken once a second. */
+    val rssi: Int? = null
 )
 
 /** The passage the driver opened. */
@@ -62,6 +64,8 @@ data class LiveState(
     val setupReadingUnits: List<UnitId> = emptyList(),
     /** Units that a write, an Identify or a PIN reset needs connected, once for each. */
     val busy: List<UnitId> = emptyList(),
+    /** When this phone last lost or let go of each unit it was connected to. */
+    val heldAt: Map<UnitId, ComparableTimeMark> = emptyMap(),
     /** The app is in the foreground with Bluetooth ready, and not in demo mode. */
     val active: Boolean = false
 ) {
@@ -73,6 +77,19 @@ data class LiveState(
         links[id]?.let { copy(links = links + (id to change(it))) } ?: this
 
     fun withOpen(change: (OpenState) -> OpenState): LiveState = copy(open = open?.let(change))
+
+    /** The phone stops holding [unit] at [now], having lost the link or let go of it. */
+    fun released(unit: UnitId, now: ComparableTimeMark): LiveState =
+        copy(heldAt = heldAt + (unit to now))
+
+    /**
+     * Whether another phone holds the unit of [sighting]. A unit advertises as in use while this
+     * phone is connected to it, and for a moment after, which doesn't count.
+     */
+    fun inUseByAnother(sighting: Sighting): Boolean {
+        val unit = sighting.unit ?: return sighting.inUseByAnother(null)
+        return !connected(unit) && sighting.inUseByAnother(heldAt[unit])
+    }
 }
 
 /**
@@ -98,7 +115,6 @@ fun LiveState.openPassage(): OpenPassage? {
         setup.units.associate { unit ->
             unit.id to unitLive(
                 links[unit.id],
-                sightings.values.of(unit.id),
                 setup,
                 disconnected = unit.id in open.disconnected || open.paused
             )
@@ -108,16 +124,16 @@ fun LiveState.openPassage(): OpenPassage? {
     )
 }
 
-fun LiveState.remembered(): List<RememberedPassage> =
-    stored.passages.map { RememberedPassage(it.setup, it.preferences, knowsPin = it.pin != null) }
+fun Stored.remembered(): List<RememberedPassage> =
+    passages.map { RememberedPassage(it.setup, it.preferences, knowsPin = it.pin != null) }
+
+/** The links with each unit's signal strength from its latest advertisement. */
+fun LiveState.withSignals(): LiveState = copy(
+    links = links.mapValues { (id, link) -> link.copy(rssi = sightings.values.of(id)?.rssi) }
+)
 
 /** One unit as the screens see it. Battery, sensor and setup are known only while connected. */
-fun unitLive(
-    link: LinkState?,
-    sighting: Sighting?,
-    newest: PassageSetup,
-    disconnected: Boolean
-): UnitLive {
+fun unitLive(link: LinkState?, newest: PassageSetup, disconnected: Boolean): UnitLive {
     val connection = if (disconnected) Connection.Disconnected else link?.connection
     val connected = connection == Connection.Connected
     return UnitLive(
@@ -126,7 +142,7 @@ fun unitLive(
         sensorFault = connected && link?.status?.flags?.sensorFault == true,
         outOfDate = connected && link?.isOutOfDate(newest) == true,
         firmware = link?.info?.firmware,
-        rssi = sighting?.rssi,
+        rssi = link?.rssi,
         reading = link?.reading.takeIf { connected }
     )
 }

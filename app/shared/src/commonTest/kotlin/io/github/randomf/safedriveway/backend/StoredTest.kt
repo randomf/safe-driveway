@@ -29,7 +29,12 @@ class StoredTest {
 
     private val stored = Stored(
         passages = listOf(
-            StoredPassage(garage, DriverPreferences(Direction.Reversing, false, 0.35f), "1234"),
+            StoredPassage(
+                garage,
+                DriverPreferences(Direction.Reversing, false, 0.35f),
+                pin = "5678",
+                previousPin = "1234"
+            ),
             StoredPassage(gate)
         ),
         choices = mapOf(setOf(garage.id, gate.id) to gate.id)
@@ -47,6 +52,14 @@ class StoredTest {
         assertNull(decodeStored(byteArrayOf(9)))
         val bytes = encodeStored(stored)
         assertNull(decodeStored(bytes.copyOf(bytes.size - 3)))
+    }
+
+    @Test
+    fun keepsTheOtherPassagesWhenOnesRecordIsntValid() {
+        // A setup that no record can hold: the critical gap isn't below the warning gap.
+        val broken = setup(9, "Broken").copy(criticalGapMm = 150)
+        val bytes = encodeStored(stored.copy(passages = stored.passages + StoredPassage(broken)))
+        assertEquals(stored, decodeStored(bytes))
     }
 
     @Test

@@ -14,6 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TestTimeSource
 
 class LiveStateTest {
@@ -53,7 +54,7 @@ class LiveStateTest {
                 sighting(right, garage.id, null),
                 sighting(spare, null, "Safe Driveway C4F1")
             ),
-            ours = emptySet(),
+            inUseByAnother = { it.advertised.flags.inUse },
             settled = true
         )
         assertEquals(listOf("Garage"), nearby.passages.map { it.name })
@@ -63,15 +64,29 @@ class LiveStateTest {
 
     @Test
     fun aPassageShowsOnceItsNameIsHeard() {
-        val nearby = nearbyOf(listOf(sighting(left, garage.id, null)), emptySet(), settled = true)
+        val nearby = nearbyOf(listOf(sighting(left, garage.id, null)), { false }, settled = true)
         assertTrue(nearby.passages.isEmpty())
     }
 
     @Test
     fun onlyAnotherPhoneMakesAPassageInUse() {
-        val sightings = listOf(sighting(left, garage.id, "Garage", inUse = true))
-        assertTrue(nearbyOf(sightings, emptySet(), true).passages.single().inUse)
-        assertFalse(nearbyOf(sightings, setOf(left), true).passages.single().inUse)
+        val sighting = sighting(left, garage.id, "Garage", inUse = true)
+        val state = LiveState(sightings = mapOf(sighting.address to sighting))
+        assertTrue(nearbyOf(listOf(sighting), state::inUseByAnother, true).passages.single().inUse)
+        val connected = state.copy(links = mapOf(left to LinkState(Connection.Connected)))
+        assertFalse(
+            nearbyOf(listOf(sighting), connected::inUseByAnother, true).passages.single().inUse
+        )
+    }
+
+    @Test
+    fun aUnitThisPhoneJustHeldStillAdvertisesAsInUseByIt() {
+        val released = LiveState().released(left, clock.markNow())
+        clock += 2.seconds
+        assertFalse(released.inUseByAnother(sighting(left, garage.id, "Garage", inUse = true)))
+        clock += Sighting.HELD_FOR
+        assertTrue(released.inUseByAnother(sighting(left, garage.id, "Garage", inUse = true)))
+        assertFalse(released.inUseByAnother(sighting(left, garage.id, "Garage", inUse = false)))
     }
 
     @Test
@@ -100,18 +115,19 @@ class LiveStateTest {
             recordRead = true,
             record = garage.copy(version = 2)
         )
-        val live = unitLive(link, null, garage, disconnected = false)
+        val live = unitLive(link.copy(rssi = -61), garage, disconnected = false)
         assertEquals(76, live.batteryPercent)
         assertTrue(live.sensorFault)
         assertTrue(live.outOfDate)
-        val lost = unitLive(link.copy(connection = Connection.Reconnecting), null, garage, false)
+        assertEquals(-61, live.rssi)
+        val lost = unitLive(link.copy(connection = Connection.Reconnecting), garage, false)
         assertNull(lost.batteryPercent)
         assertFalse(lost.outOfDate)
         assertEquals(
             Connection.Disconnected,
-            unitLive(link, null, garage, disconnected = true).connection
+            unitLive(link, garage, disconnected = true).connection
         )
-        assertEquals(Connection.Searching, unitLive(null, null, garage, false).connection)
+        assertEquals(Connection.Searching, unitLive(null, garage, false).connection)
     }
 
     @Test

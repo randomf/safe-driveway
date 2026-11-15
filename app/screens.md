@@ -122,7 +122,7 @@ The ⚙ on the main screen.
 
 ### PIN dialog
 
-Asked before the setup changes, unless this phone already knows the PIN. A correct PIN is remembered. A wrong one says that after 5 wrong PINs in a row the units refuse every PIN until they're switched off and on; once they do, the dialog says so. *Forgot the PIN?* opens the reset.
+Asked before the setup changes, unless this phone already knows the PIN. A correct PIN is remembered. A wrong one says that after 5 wrong PINs in a row the units refuse every PIN until they're switched off and on; once they do, the dialog says so. When no unit answers, it says that the PIN couldn't be checked. *Forgot the PIN?* opens the reset.
 
 ### Reset the PIN
 
