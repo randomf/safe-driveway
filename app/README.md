@@ -6,6 +6,7 @@ This folder holds the mobile app that runs on the phone in the car, and the task
 |---|---|
 | [features.md](features.md) | What the first version of the app does |
 | [screens.md](screens.md) | What each screen shows, and how the driver moves between them |
+| [e2e-tests.md](e2e-tests.md) | The tests to replay on a phone and a unit, step by step, and what passes |
 | [screenshots/](screenshots/) | Screenshots for the documentation, from the emulator in demo mode, with the **Demo** tab painted out where it isn't the subject |
 | [artwork/](artwork/) | The app's icon and the header of the project's [README](../README.md), as SVG, and what Android's adaptive icon is made from |
 | [shared/](shared/) | The code for both platforms: the logic, the BLE connections and the screens, in Compose Multiplatform. Its texts are in `shared/src/commonMain/composeResources/`, in English (`values/`) and Czech (`values-cs/`). The screens run on the units, or in demo mode on pretend ones ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md), [ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)) |
@@ -70,7 +71,7 @@ The emulator that Android Studio's wizard creates runs the app, but it has no re
 
 ## Testing with a unit
 
-The app connects to the units over Bluetooth Low Energy ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)). With a unit on this computer's USB and the phone on another, both sides can be watched while the app runs:
+The app connects to the units over Bluetooth Low Energy ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)). With a unit on this computer's USB and the phone on another, both sides can be watched while the app runs. [e2e-tests.md](e2e-tests.md) uses these to test the app against the unit:
 
 - **The app's log:** it prints each connection, command and Release:
 
