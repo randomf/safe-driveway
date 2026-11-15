@@ -9,6 +9,7 @@ Usage: python -m host.bringup [CHECK ...]
 """
 
 import argparse
+import json
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -20,6 +21,9 @@ DOC = "prototype-assembly.md"
 
 # The distance sensor in the parts list, see ../../doc/adr/0004-vl53l1x-distance-sensor.md.
 EXPECTED_SENSOR = "VL53L1X"
+
+# The notes the firmware reads when it starts, see ../board/firmware/main.py.
+NOTES_FILE = "/unit.json"
 
 
 @dataclass
@@ -37,6 +41,7 @@ class Unit:
         self.transport = transport
         self.named = named  # the checks the person asked for by name
         self.buzzer_silent: int | None = None  # the level that silences it, once the check knows
+        self.notes: dict[str, Any] = {}  # what the firmware has to know, see save_notes
 
     def call(self, expression: str) -> Any:
         return board.evaluate(self.transport, expression)
@@ -176,14 +181,14 @@ def check_buzzer(unit: Unit) -> Result:
         # Released until the answers show which level is silent.
         unit.call("buzzer(None)")
     if low and not high:
-        unit.buzzer_silent = 1
+        unit.buzzer_silent = unit.notes["buzzer_silent"] = 1
         unit.call("buzzer(1)")
         return ok(
             "low-triggered, the usual YL-44",
             "Buzzer is low-triggered: LOW sounds it, HIGH silences it.",
         )
     if high and not low:
-        unit.buzzer_silent = 0
+        unit.buzzer_silent = unit.notes["buzzer_silent"] = 0
         unit.call("buzzer(0)")
         return ok(
             "high-triggered variant",
@@ -206,6 +211,7 @@ def check_battery(unit: Unit) -> Result:
         if fitted is None:
             return nobody()
         if not fitted:
+            unit.notes["battery_divider"] = False
             return Result(console.SKIP, "no battery divider fitted")
     if not console.interactive():
         return nobody()
@@ -219,11 +225,13 @@ def check_battery(unit: Unit) -> Result:
     if not 2.9 <= volts <= 4.3:
         return failed(f"{volts:.2f} V is outside 3.0–4.2 V.", "Check both 100 kΩ resistors.")
     detail = f"{volts:.2f} V"
+    unit.notes["battery_divider"] = True
     reading = console.prompt("Your multimeter reading across the battery in V (Enter to skip):")
     try:
         offset = volts - float(reading.replace(",", "."))
     except ValueError:
         return ok(detail)
+    unit.notes["battery_offset_v"] = round(offset, 2)
     return ok(
         f"{detail}, offset {offset:+.2f} V from the multimeter",
         f"Battery reading is {offset:+.2f} V off the multimeter.",
@@ -292,6 +300,23 @@ def summarize(results: list[tuple[str, Result]], all_checks: bool) -> int:
     return 1 if counts[console.FAIL] else 0
 
 
+def save_notes(transport: board.SerialTransport, notes: dict[str, Any]) -> None:
+    """Offer to save the notes for the firmware to the board, over those saved before."""
+    if not notes or not console.interactive():
+        return
+    try:
+        saved = json.loads(transport.fs_readfile(NOTES_FILE))
+    except (board.TransportError, OSError, ValueError):
+        saved = {}
+    merged = {**saved, **notes}
+    if merged == saved:
+        print(f"The notes in {NOTES_FILE} on the board are up to date.")
+        return
+    if console.ask(f"Save the notes for the firmware to {NOTES_FILE} on the board?", default=True):
+        transport.fs_writefile(NOTES_FILE, json.dumps(merged).encode())
+        print(f"{console.OK} Saved. The firmware reads them when it starts.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="just bringup", description="Guided bring-up test of a prototype unit."
@@ -323,12 +348,18 @@ def main() -> int:
                     print(
                         f"{console.WARN} Couldn't reset the pins. Press the board's reset button."
                     )
+            exit_code = summarize(results, all_checks=not args.checks)
+            save_notes(transport, unit.notes)
+            if transport.fs_exists("/main.py"):
+                print(
+                    "The firmware stopped for the test. Reset the board, or switch it off and on."
+                )
     except board.TransportError as e:
         board.fail_unresponsive(e)
     except KeyboardInterrupt:
         print("\nStopped.")
         return 1
-    return summarize(results, all_checks=not args.checks)
+    return exit_code
 
 
 if __name__ == "__main__":

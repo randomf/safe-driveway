@@ -1,0 +1,28 @@
+# Checks the device's code on every change to it: code style, and the tests of the
+# firmware's pure logic, which run on the computer. See device/README.md.
+name: Device
+
+on:
+  push:
+    branches: [main]
+    paths: ["device/**", ".github/workflows/device.yml"]
+  pull_request:
+    paths: ["device/**", ".github/workflows/device.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: device
+    steps:
+      - uses: actions/checkout@v7
+      # uv installs the Python in device/.python-version and the tools locked in device/uv.lock.
+      # setup-uv publishes only full version tags, no v10.
+      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: extractions/setup-just@v4
+      - run: just lint
+      - run: just test

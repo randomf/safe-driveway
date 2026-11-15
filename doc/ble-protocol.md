@@ -20,7 +20,7 @@ This document describes protocol version **1**.
 - **Gate index:** gates are numbered 0 to 3 in order of their position, gate 0 nearest end 0.
 - **Side:** 0 is left, 1 is right, as seen standing at end 0 and looking along the passage. The app turns this into the driver's left and right from the end the car enters by and whether it is reversing.
 - **Gap:** a *valid* reading's distance minus the unit's zero offset. It can be negative. Readings with any other status have no gap.
-- **Switched on:** a power-on start, from the power switch or from plugging in USB. A restart after a crash, a watchdog reset or a brownout doesn't count.
+- **Switched on:** a power-on start, from the power switch or from plugging in USB. The board's reset button and a brownout count too, because the ESP32 starts from them the same way and MicroPython can't tell them apart. A restart after a crash or a watchdog reset doesn't count.
 
 ## Advertising
 
@@ -55,7 +55,7 @@ The flags byte is the same here and in the [status](#status) characteristic:
 | 1 | Unlocked | The connected phone may change the setup, see [PIN and locking](#pin-and-locking) |
 | 2 | PIN reset window | The unit was switched on less than 2 minutes ago |
 | 3 | Locked out | 5 wrong PINs in a row have been sent |
-| 4 | Low battery | The battery is below 20 %. Only on units with the battery divider |
+| 4 | Low battery | The battery is below 20 %. Only on units with a battery reading |
 | 5 | Sensor fault | The sensor didn't answer when the unit started, or its last measurement failed |
 | 6–7 | Reserved | |
 
@@ -98,11 +98,11 @@ Notified whenever a field changes.
 | Offset | Type | Field |
 |---|---|---|
 | 0 | `u8` | Flags, as in the [advertisement](#advertisement) |
-| 1 | `u8` | Battery level in %, 0–100, or 255 when the unit has no battery divider |
+| 1 | `u8` | Battery level in %, 0–100, or 255 when the unit has no battery reading: it has no battery divider, or the divider sees no battery because the unit runs from USB with its switch off |
 
 ### Reading
 
-The unit measures 20 times per second for as long as a phone is connected, and notifies every measurement as soon as it has it, including those that see no target. If the sensor hasn't delivered a measurement 100 ms after the previous reading, the unit sends a reading with status *sensor fault* instead, and another every 50 ms while the fault lasts. A unit that sends nothing for 0.5 s has gone silent.
+The unit measures 20 times per second while the sensor runs, see [Measuring and signalling](#measuring-and-signalling). While a phone is connected, it notifies every measurement as soon as it has it, including those that see no target. If the sensor hasn't delivered a measurement 100 ms after the previous reading, the unit sends a reading with status *sensor fault* instead, and another every 50 ms while the fault lasts. A unit that sends nothing for 0.5 s has gone silent.
 
 | Offset | Type | Field |
 |---|---|---|
@@ -215,11 +215,11 @@ The unit keeps its record and its PIN together in one file on its flash. It save
 
 ### Measuring and signalling
 
-- The sensor runs only while a phone is connected, and for a short time after the connection is lost. An idle unit only advertises.
-- While the sensor runs, a unit whose placement has bit 3 set signals with its own buzzer and red LED. A *valid* reading gives a warning while its gap is below the warning gap, and the critical signal while its gap is below the critical gap. A *too close* reading gives the critical signal. Readings with any other status give no signal. The firmware defines the patterns.
+- The sensor runs while a phone is connected, for the first 10 minutes after the unit starts, whether it was switched on or restarted, and for 5 minutes after a connection is lost. A unit with no phone, or with a flaky link, still warns a driver. Otherwise the unit only advertises.
+- While the sensor runs, a unit whose placement has bit 3 set signals with its own buzzer and red LED. A *valid* reading gives a warning while its gap is below the warning gap, and the critical signal while its gap is below the critical gap. A *too close* reading gives the critical signal. Readings with any other status keep the signal of the last *valid* or *too close* reading for up to 0.5 s, so that a dark car that drops out for a few readings doesn't break the warning, and give no signal after that. The firmware defines the patterns, see [device/firmware.md](../device/firmware.md#lights-and-sounds).
 - A unit doesn't signal the gap while it is unlocked, so that a board held on the line while setting the zero offset doesn't sound the alarm. Identify still works.
-- **When the phone disconnects after Release**, the unit switches the sensor off at once.
-- **After any other disconnect**, such as a lost link or an app that was closed without sending Release, the unit keeps measuring and signalling until it has had no *valid* or *too close* reading for 10 s, and for at most 2 minutes. Then it switches the sensor off. A phone that connects in the meantime takes over as usual.
+- **When the phone disconnects after Release**, the unit switches the sensor off at once, also within its first 10 minutes.
+- **After any other disconnect**, such as a lost link or an app that was closed without sending Release, the unit keeps measuring and signalling for 5 minutes, whatever is in front of it, or until its first 10 minutes are over if that is later. Then it switches the sensor off. A phone that connects in the meantime takes over as usual.
 
 ## Sequences
 

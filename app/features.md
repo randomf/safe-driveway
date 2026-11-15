@@ -32,7 +32,7 @@ This file describes what the first version supports, and [screens.md](screens.md
 - While the app is open, it reconnects lost units by itself.
 - Each unit sends 20 readings per second. A reading reaches the screen and the sound within 100 ms of being measured.
 - A reading older than 0.5 s shows as "no data", never as a gap. If a unit goes silent while the car is in the passage, the app plays a distinct warning sound.
-- The battery level shows as a percentage on units fitted with the battery divider ([ADR 0001](../doc/adr/0001-prototype-hardware.md)). When the passage is opened, the app warns about units with a low battery.
+- The battery level shows as a percentage on units fitted with the battery divider ([ADR 0001](../doc/adr/0001-prototype-hardware.md)), while they run from their battery. When the passage is opened, the app warns about units with a low battery.
 
 ### Starting and ending a pass
 
@@ -86,7 +86,7 @@ What the screen shows:
 - Between the warning and the critical threshold, the phone beeps, faster as the gap closes. Below the critical threshold, it plays a continuous tone.
 - Alarms play even when the phone is on silent or Do Not Disturb, at a volume set in the app. Other audio, such as music or navigation, is turned down while the car is in the passage.
 - The sound goes through the phone's current audio output. Bluetooth car audio commonly adds 100–200 ms of delay, so the screen and the units' own buzzers are the fastest warnings.
-- The units' own buzzers and red LEDs signal the gap too, unless the passage's setup switches them off. They signal while a phone is connected, and, if the connection is lost, until the car has gone, for at most 2 minutes. They stay quiet when no phone has connected, after the app disconnects on purpose, and while their setup is being changed.
+- The units' own buzzers and red LEDs signal the gap too, unless the passage's setup switches them off. They signal while a phone is connected, for the first 10 minutes after they are switched on, and for 5 minutes after the connection is lost, so that they warn a driver with no phone or with a flaky link. They stay quiet after the app disconnects on purpose, and while their setup is being changed.
 - The suggestion arrow says how to turn the steering wheel: left, right or keep straight. It shows only while a gate sees the car.
   - When two gates see the car, the app projects the car's current heading to the next gate ahead. If one predicted gap there is smaller than the other by more than a small margin, it suggests turning the wheel to even them out.
   - When one gate sees the car, it suggests moving towards the bigger gap.

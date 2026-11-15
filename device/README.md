@@ -1,13 +1,15 @@
 # Remote device
 
-This folder holds everything needed to build the remote device that is installed at the passage: how to wire and assemble it, and the tools to flash and test it from a computer.
+This folder holds everything needed to build the remote device that is installed at the passage: how to wire and assemble it, its firmware, and the tools to flash and test it from a computer.
 
 | Path | What it is |
 |---|---|
 | [prototype-assembly.md](prototype-assembly.md) | Parts, wiring, assembly and bring-up tests of the prototype unit |
+| [firmware.md](firmware.md) | What the firmware does, its lights and sounds, its log, and how to install and test it |
 | [justfile](justfile) | The tasks listed under [Tasks](#tasks) |
-| [host/](host/) | Code that runs on the computer: flashing, `doctor` and the guided bring-up test |
-| [board/](board/) | Code that runs on the board, in MicroPython: the bring-up checks, and in [board/lib/](board/lib/) libraries such as the VL53L1X sensor driver. The firmware will go in `board/firmware/` and implement the BLE protocol in [doc/ble-protocol.md](../doc/ble-protocol.md) |
+| [host/](host/) | Code that runs on the computer: flashing, `doctor`, the guided bring-up test, installing the firmware, its log, and `ble`, which acts as the phone |
+| [board/](board/) | Code that runs on the board, in MicroPython: the firmware in [board/firmware/](board/firmware/), which implements the BLE protocol in [doc/ble-protocol.md](../doc/ble-protocol.md), the bring-up checks, and in [board/lib/](board/lib/) libraries such as the VL53L1X sensor driver |
+| [tests/](tests/) | The tests of the firmware's pure modules, which run on the computer |
 | [micropython.toml](micropython.toml) | The MicroPython release that every unit runs |
 | `pyproject.toml`, `uv.lock`, `.python-version` | The Python environment for the code in `host/` |
 
@@ -32,7 +34,7 @@ You need a computer with Linux, macOS or Windows, and a USB cable that carries d
    just doctor
    ```
 
-   The first run creates the Python environment in `device/.venv`, with the versions of mpremote, esptool and ruff pinned in `uv.lock`. `doctor` then checks the tools, finds the board's serial port, checks that you may open it and asks the board for its MicroPython version. It says how to fix anything that's wrong, and never changes your system itself.
+   The first run creates the Python environment in `device/.venv`, with the versions of mpremote, esptool, mpy-cross, bleak, pytest and ruff pinned in `uv.lock`. `doctor` then checks the tools, finds the board's serial port, checks that you may open it and asks the board for its MicroPython version. It says how to fix anything that's wrong, and never changes your system itself.
 4. If you'll edit code: run `just stubs` and open [safe-driveway.code-workspace](../safe-driveway.code-workspace). See [Editing the code](#editing-the-code).
 
 ### Serial port on Linux
@@ -63,7 +65,11 @@ Run the tasks from the `device/` folder or any folder below it. `just` on its ow
 | `just repl` | Opens the MicroPython REPL on the board, with `board/` mounted as the current directory, so that `from bringup import *` loads the checks and they find the sensor driver. Leave it with Ctrl-] or Ctrl-X |
 | `just distance` | Shows the distance the sensor measures, live, until Ctrl-C |
 | `just bringup` | Runs the guided bring-up test, see [Testing a unit](#testing-a-unit). Name checks to run only those: `board`, `sensor`, `distance`, `view`, `leds`, `buzzer`, `battery` |
+| `just install` | Installs the firmware, which then starts whenever the unit is switched on, see [firmware.md](firmware.md#installing) |
+| `just monitor` | Shows what the firmware prints over USB, until Ctrl-C, without stopping it. `--reset` first restarts the board as if it were switched on |
+| `just ble` | Acts as the phone over this computer's Bluetooth: `scan`, `watch`, `setup`, `identify`, `unlock`, `set-pin`, `forget`. See [firmware.md](firmware.md#testing-without-the-app) |
 | `just stubs` | Installs the MicroPython type stubs that editors use for the code in `board/` |
+| `just test` | Runs the tests of the firmware's pure modules on this computer, with pytest |
 | `just lint` | Checks the code with ruff, without changing anything |
 | `just fmt` | Formats the code and fixes what ruff can fix by itself |
 
@@ -78,8 +84,9 @@ DEVICE_PORT=/dev/ttyUSB1 just bringup
 - **A new board, before any soldering** (step 1 of [the assembly](prototype-assembly.md#1-bench-check-the-board)): `just flash`, then `just bringup board`.
 - **While wiring:** test each part as soon as it's connected, for example `just bringup sensor` or `just bringup leds buzzer`.
 - **The finished unit** (step 9): `just bringup`, then the power and charging checks by hand.
+- **Its firmware** (step 10): `just install`, then `just ble watch` to see the readings, as described in [firmware.md](firmware.md#testing-without-the-app).
 
-The board and sensor checks run by themselves. For the distance readings and the sensor's clear view, the run asks you to move your hand or aim the unit; for the LEDs and the buzzer, it asks what you see and hear. It goes on after a failed check, and ends with a summary, any notes the firmware needs (such as the buzzer's polarity) and the checks still to do by hand. The exit code is non-zero if any check failed.
+The board and sensor checks run by themselves. For the distance readings and the sensor's clear view, the run asks you to move your hand or aim the unit; for the LEDs and the buzzer, it asks what you see and hear. It goes on after a failed check, and ends with a summary, any notes the firmware needs (such as the buzzer's polarity) and the checks still to do by hand. It then offers to save the notes on the board, where the firmware reads them. The exit code is non-zero if any check failed.
 
 ```
 Bring-up test on /dev/ttyUSB0
@@ -91,17 +98,17 @@ Bring-up test on /dev/ttyUSB0
   …
 ```
 
-What each check expects, and what to do when one fails, is in [Bring-up tests](prototype-assembly.md#bring-up-tests). The checks themselves are in [board/bringup.py](board/bringup.py), and the code that runs them from the computer is in [host/bringup.py](host/bringup.py). The run sends the checks and the sensor driver into the board's RAM, so nothing is written to the board's filesystem.
+What each check expects, and what to do when one fails, is in [Bring-up tests](prototype-assembly.md#bring-up-tests). The checks themselves are in [board/bringup.py](board/bringup.py), and the code that runs them from the computer is in [host/bringup.py](host/bringup.py). The run sends the checks and the sensor driver into the board's RAM, so nothing but the notes is written to the board's filesystem. It stops the firmware, if it is installed, until the board is reset or switched off and on.
 
 ## Editing the code
 
 Open [safe-driveway.code-workspace](../safe-driveway.code-workspace) in VS Code (*File > Open Workspace from File…*) and install the recommended extensions. The workspace has three folders, so that each kind of code gets the right checks:
 
 - **Safe Driveway**: the documentation.
-- **device**: the host tools, checked against normal Python in `device/.venv`.
+- **device**: the host tools and the tests, checked against normal Python in `device/.venv`.
 - **device/board (MicroPython)**: the board code, checked against the MicroPython stubs. Run `just stubs` first.
 
-Other editors that use pyright or basedpyright read the same settings: open `device/` for the host tools and `device/board/` for the board code. Run `just lint` before committing.
+Other editors that use pyright or basedpyright read the same settings: open `device/` for the host tools and `device/board/` for the board code. Run `just lint` and `just test` before committing.
 
 ## Changing the MicroPython version
 
@@ -115,8 +122,8 @@ Every unit runs the release pinned in [micropython.toml](micropython.toml). To c
    ```
 
 3. Set `version`, `date` and `sha256` in `micropython.toml`.
-4. Update mpremote to the matching version with `uv lock --upgrade-package mpremote`.
-5. Run `just stubs`, then `just flash` and `just bringup` on a test unit.
+4. Update mpremote and mpy-cross to the matching versions with `uv lock --upgrade-package mpremote --upgrade-package "mpy-cross==<version>.*"`. `just install` refuses an mpy-cross that doesn't match the pinned release, because the board can't always load what another one compiles.
+5. Run `just stubs`, then `just flash`, `just bringup` and `just install` on a test unit, and check it with `just ble watch`.
 6. Commit `micropython.toml` and `uv.lock` together.
 
-To update the other host tools, run `uv lock --upgrade`, test with `just doctor` and `just bringup`, and commit `uv.lock`.
+To update the other host tools, run `uv lock --upgrade`, then put mpy-cross back on the pinned release with `uv lock --upgrade-package "mpy-cross==<version>.*"`. Test with `just doctor`, `just bringup`, `just install` and `just ble watch`, and commit `uv.lock`.
