@@ -1,4 +1,4 @@
-# Safe Driveway
+<h1 align="center"><img src="app/artwork/readme-header.svg" alt="Safe Driveway" width="100%"></h1>
 
 Hardware and software solution to prevent car scratches in narrow driveways and garage entrances
 
