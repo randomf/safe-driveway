@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Everything the screens need from below them: the units, over BLE, and what the phone stores.
- * The prototype's DemoBackend fakes it; the BLE code will implement it (ADR 0009).
+ * LiveBackend implements it on the real units; DemoBackend fakes it for demo mode (ADR 0009).
  */
 interface Backend {
     /** What the phone sees in the units' advertising. */
@@ -40,6 +40,7 @@ interface Backend {
 
     fun disconnect(unit: UnitId)
 
+    /** Connects every unit again: those the driver disconnected, and after a pause. */
     fun reconnectAll()
 
     /** Makes the unit blink and beep for 5 s. */
@@ -123,8 +124,17 @@ data class RememberedPassage(
     val knowsPin: Boolean
 )
 
-/** The passage the app is connected to: its newest setup and every unit's live state. */
-data class OpenPassage(val setup: PassageSetup, val units: Map<UnitId, UnitLive>)
+/**
+ * The passage the app is connected to: its newest setup and every unit's live state. [paused]:
+ * the app let go of the units after minutes with no car, until the driver reconnects them.
+ * [unlocked]: the units are unlocked for a change of their setup, and don't signal the gap.
+ */
+data class OpenPassage(
+    val setup: PassageSetup,
+    val units: Map<UnitId, UnitLive>,
+    val paused: Boolean = false,
+    val unlocked: Boolean = false
+)
 
 enum class UnlockResult { Unlocked, WrongPin, LockedOut }
 

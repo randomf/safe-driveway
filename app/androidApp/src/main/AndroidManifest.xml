@@ -22,11 +22,14 @@
         android:theme="@android:style/Theme.Material.NoActionBar">
         <!-- Compose redraws the screen when it turns, or night or car mode starts, so the
              activity isn't recreated: the connections and the screens' state stay as they are.
-             The app is always dark, so night mode changes nothing on screen. -->
+             The app is always dark, so night mode changes nothing on screen.
+             One instance only: each holds the connections to the units, which a second
+             instance, started over it, would have to compete for. -->
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

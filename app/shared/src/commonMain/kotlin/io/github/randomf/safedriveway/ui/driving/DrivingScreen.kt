@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.randomf.safedriveway.KeepScreenOn
 import io.github.randomf.safedriveway.backend.Backend
 import io.github.randomf.safedriveway.passage.Direction
 import io.github.randomf.safedriveway.passage.DrivingView
@@ -59,6 +61,8 @@ import io.github.randomf.safedriveway.resources.centimetres_unit
 import io.github.randomf.safedriveway.resources.direction_forwards
 import io.github.randomf.safedriveway.resources.direction_reversing
 import io.github.randomf.safedriveway.resources.passage_settings
+import io.github.randomf.safedriveway.resources.paused
+import io.github.randomf.safedriveway.resources.reconnect
 import io.github.randomf.safedriveway.resources.steer_left
 import io.github.randomf.safedriveway.resources.steer_right
 import io.github.randomf.safedriveway.resources.steer_straight
@@ -124,6 +128,9 @@ fun DrivingScreen(
     var details by remember { mutableStateOf<UnitId?>(null) }
     var showNotices by remember { mutableStateOf(false) }
     val notices = passage?.let { notices(it.setup, it.units) }.orEmpty()
+    val paused = passage?.paused == true
+    // The phone stays awake for the driver, until the app pauses after minutes with no car.
+    if (!paused) KeepScreenOn()
 
     val current = view
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -155,7 +162,12 @@ fun DrivingScreen(
                 ) {
                     topBar()
                     strip()
-                    Header(current, Modifier.fillMaxWidth().weight(1f))
+                    Header(
+                        current,
+                        paused,
+                        backend::reconnectAll,
+                        Modifier.fillMaxWidth().weight(1f)
+                    )
                     switch()
                     UnitChips(current, { details = it }, Modifier.padding(12.dp))
                 }
@@ -164,7 +176,12 @@ fun DrivingScreen(
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                 topBar()
                 strip()
-                Header(current, Modifier.fillMaxWidth().height(150.dp))
+                Header(
+                    current,
+                    paused,
+                    backend::reconnectAll,
+                    Modifier.fillMaxWidth().height(150.dp)
+                )
                 switch()
                 PassageView(current, Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp))
                 UnitChips(current, { details = it }, Modifier.padding(12.dp))
@@ -209,13 +226,36 @@ fun DrivingScreen(
     }
 }
 
-/** The arrow and the smallest gap while a gate sees the car; before that, how many units are ready. */
+/**
+ * The arrow and the smallest gap while a gate sees the car; before that, how many units are ready;
+ * and once the app has [paused], a button to reconnect.
+ */
 @Composable
-private fun Header(view: DrivingView, modifier: Modifier) {
+private fun Header(
+    view: DrivingView,
+    paused: Boolean,
+    onReconnect: () -> Unit,
+    modifier: Modifier
+) {
     Box(modifier, contentAlignment = Alignment.Center) {
         val steer = view.steer
         val smallest = view.smallest
-        if (steer == null || smallest == null) {
+        if (paused) {
+            Column(
+                Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    stringResource(Res.string.paused),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
+                Button(onClick = onReconnect, Modifier.height(56.dp)) {
+                    Text(stringResource(Res.string.reconnect))
+                }
+            }
+        } else if (steer == null || smallest == null) {
             Text(
                 pluralStringResource(
                     Res.plurals.units_ready,

@@ -38,18 +38,20 @@
     <string name="demo_bluetooth_not_supported">Not supported</string>
     <string name="demo_bluetooth_off">Off</string>
     <string name="demo_bluetooth_permission">No permission</string>
-    <string name="demo_bluetooth_phone">This phone’s</string>
+    <string name="demo_bluetooth_ready">Ready</string>
     <string name="demo_course_clear">Plenty of room</string>
     <string name="demo_course_critical">Too close</string>
     <string name="demo_course_tight">Tight</string>
     <string name="demo_end_far">From the far end</string>
     <string name="demo_end_usual">From the usual end</string>
-    <string name="demo_hint">The prototype has no Bluetooth: these pretend states stand in for the units. The demo’s own passages have the PIN %1$s; a passage set up in the demo has the PIN given to it.</string>
+    <string name="demo_hint">These pretend states stand in for the units. The demo’s own passages have the PIN %1$s; a passage set up in the demo has the PIN given to it.</string>
     <string name="demo_in_range">In range</string>
     <string name="demo_in_range_both">Garage and Front gate</string>
     <string name="demo_in_range_garage">Garage</string>
     <string name="demo_in_range_new_units">New units only</string>
     <string name="demo_in_range_nothing">Nothing</string>
+    <string name="demo_mode">Demo mode</string>
+    <string name="demo_mode_hint">The app runs on pretend units and a pretend car, without Bluetooth. The Demo tab on the right edge sets what they do. The next time the app opens, it starts on the real units again.</string>
     <string name="demo_pass">Simulated pass</string>
     <string name="demo_pass_needs_passage">Open a passage first.</string>
     <string name="demo_pass_playing">A car is driving through.</string>
@@ -138,6 +140,7 @@
     <string name="passage_not_in_range">Not in range</string>
     <string name="passage_settings">Passage settings</string>
     <string name="passages_title">Passages</string>
+    <string name="paused">Paused: no car for 5 minutes, so the app let go of the units to save their batteries.</string>
     <string name="percent">%1$d %</string>
     <string name="pick_unit_title">Gate %1$d, %2$s wall</string>
     <string name="pin">PIN</string>
@@ -172,6 +175,7 @@
     <string name="reading_no_target">Nothing in front</string>
     <string name="reading_too_close">Too close</string>
     <string name="reading_unreliable">Can’t measure</string>
+    <string name="reconnect">Reconnect</string>
     <string name="reconnect_all">Reconnect all units</string>
     <string name="remove">Remove</string>
     <string name="remove_from_gate">Take it off this gate</string>
@@ -230,6 +234,7 @@
     <string name="thresholds_hint">Below the warning gap, the phone beeps, faster as the gap closes. Below the critical gap, it sounds a continuous tone. A tight passage needs smaller values, or the warning sounds all the time.</string>
     <string name="thresholds_summary">Warning %1$s, critical %2$s</string>
     <string name="try_again">Try again</string>
+    <string name="try_demo">Try the demo</string>
     <string name="unit_default_name">Gate %1$d %2$s</string>
     <string name="unit_name">Unit name</string>
     <string name="units">Units</string>
@@ -243,6 +248,7 @@
     <string name="usual_forwards">Forwards</string>
     <string name="usual_reversing">Reversing</string>
     <string name="volume">Alarm volume</string>
+    <string name="volume_low">The phone’s alarm volume is low, so the alarm sounds quietly. Turn it up in the phone’s sound settings.</string>
     <string name="warning_gap">Warning gap</string>
     <string name="which_passage_hint">The app remembers your choice for these passages.</string>
     <string name="which_passage_title">Which passage?</string>

@@ -47,12 +47,16 @@ import io.github.randomf.safedriveway.resources.usual_direction_hint
 import io.github.randomf.safedriveway.resources.usual_forwards
 import io.github.randomf.safedriveway.resources.usual_reversing
 import io.github.randomf.safedriveway.resources.volume
+import io.github.randomf.safedriveway.resources.volume_low
 import io.github.randomf.safedriveway.ui.ConfirmDialog
 import io.github.randomf.safedriveway.ui.DangerButton
 import io.github.randomf.safedriveway.ui.Hint
 import io.github.randomf.safedriveway.ui.ScreenScaffold
 import io.github.randomf.safedriveway.ui.SectionTitle
 import org.jetbrains.compose.resources.stringResource
+
+/** Below this part of its range, the phone's alarm volume is low for an alarm in a car. */
+private const val LOW_PHONE_VOLUME = 0.35f
 
 /**
  * A passage's settings: the driver's preferences on this phone, reconnecting the units, and the
@@ -65,7 +69,8 @@ fun PassageSettingsScreen(
     onBack: () -> Unit,
     onChangeSetup: () -> Unit,
     onForgotPin: () -> Unit,
-    onRemoved: () -> Unit
+    onRemoved: () -> Unit,
+    phoneAlarmVolume: () -> Float
 ) {
     val remembered by backend.remembered.collectAsState()
     val passage = remembered.find { it.setup.id == passageId }
@@ -114,6 +119,10 @@ fun PassageSettingsScreen(
                 onValueChange = { volume -> set { it.copy(volume = volume) } },
                 enabled = preferences.sound
             )
+            // The app's volume is a part of the phone's alarm volume, which it never changes.
+            if (preferences.sound && remember { phoneAlarmVolume() } < LOW_PHONE_VOLUME) {
+                Hint(stringResource(Res.string.volume_low))
+            }
         }
 
         SectionTitle(stringResource(Res.string.units))

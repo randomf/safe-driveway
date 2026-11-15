@@ -11,6 +11,8 @@ value class PassageId(val value: Long)
 value class UnitId(val hex: String) {
     /** The last 4 digits in upper case, as in "Safe Driveway 9FB8". */
     val short: String get() = hex.takeLast(4).uppercase()
+
+    override fun toString(): String = hex
 }
 
 /**

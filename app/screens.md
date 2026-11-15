@@ -2,7 +2,7 @@
 
 What each screen of the app shows, and how the driver moves between them. [features.md](features.md) says what the app does; this file says how it looks. The code is in [shared/src/commonMain/kotlin/](shared/src/commonMain/kotlin/io/github/randomf/safedriveway/), one package per group of screens below.
 
-For now the screens are a working prototype on a demo backend ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)). Every screen works, but the units are pretend, there is no sound and nothing is stored when the app closes. In a debug build, the **Demo** tab on the right edge of every screen opens the [demo panel](#demo-panel).
+The screens run on the units over Bluetooth Low Energy ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)), or in demo mode on pretend ones ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)). [About](#about) switches demo mode on, and the **Demo** tab on the right edge of every screen then opens the [demo panel](#demo-panel).
 
 ## Map
 
@@ -27,7 +27,7 @@ Passages ──► Main screen ──► Passage settings ──► PIN ──�
    │             └─► Notices ──► PIN ──► Saving the setup (brings units up to date)
    ├─► New-passage wizard: Name ► Units and gates ► Gate positions ► Zero offsets
    │                       ► Thresholds ► PIN ► Saving the setup ► Main screen
-   └─► About
+   └─► About, with demo mode
 ```
 
 Back on the main screen goes to the passages list, and back on the passages list closes the app. Every screen below the main screen keeps its passage connected, so the units' readings keep coming while the driver changes the setup.
@@ -42,7 +42,7 @@ Shown every time the app opens: Safe Driveway is a driving aid, the driver stays
 
 ### Bluetooth
 
-Shown instead of everything else while Bluetooth isn't ready: the phone has no Bluetooth Low Energy, the app has no permission, or Bluetooth is off. Where the app can help, a button asks for the permission or opens the app's settings. When Bluetooth comes back, the screen underneath is as it was.
+Shown instead of everything else while Bluetooth isn't ready: the phone has no Bluetooth Low Energy, the app has no permission, or Bluetooth is off. Where the app can help, a button asks for the permission or opens the app's settings. When Bluetooth comes back, the screen underneath is as it was. *Try the demo* switches [demo mode](#demo-panel) on, which needs no Bluetooth.
 
 ### Scanning and *Which passage?*
 
@@ -92,6 +92,7 @@ Read at arm's length in a phone holder: large digits, high contrast, dark.
 - **The switch** between forwards and reversing starts at the driver's usual direction for the passage.
 - **The passage** is drawn from above, with the car's front up: it moves up the screen when driving forwards and down when reversing, and the screen's left is the driver's left. Both walls are drawn, and each gate is a dashed line across at its real spacing. Each unit is a block on its wall at its gate, and its gap is written outside the wall: green, orange below the warning gap, red below the critical gap, or a grey dash for no data. A *too close* reading shows as the most its gap can be, such as *< 0.0*. The car is a rectangle between the gates that see it, nearer the smaller gap, and tilted when two gates see it.
 - **Below the critical gap**, the screen's border flashes red.
+- **The screen stays on** while the main screen shows. After 5 minutes with no car, the app lets go of the units to save their batteries and lets the screen sleep: the arrow's place says so, with *Reconnect*.
 - **The chips**, one per unit, sit where the units are drawn: a row per gate, the top gate first. Each has a status dot, the unit's name and its battery, or its status when it isn't connected. Tapping one opens the unit's details.
 - **The notice strip** shows the most urgent problem in one line, and how many more there are: a unit lost while connected, a sensor fault, a unit that needs a newer app, in use by another phone, beyond the phone's connection limit, with an older setup, or with a low battery. Tapping it opens the notices, each with what to do; an older setup has *Update*, which asks for the PIN. A phone that knows the PIN brings out-of-date units up to date by itself.
 
@@ -112,7 +113,7 @@ A sheet over the lower part of the main screen: the unit's name and status, its 
 
 The ⚙ on the main screen.
 
-- **On this phone:** *I usually drive in* forwards or reversing, which is where the main screen's switch starts; the alarm sound on or off; the alarm volume.
+- **On this phone:** *I usually drive in* forwards or reversing, which is where the main screen's switch starts; the alarm sound on or off; the alarm volume, as a part of the phone's alarm volume, with a note when that is low.
 - **Units:** *Reconnect all units*.
 - **Setup:** *Change the setup*, which asks for the PIN, and *Forgot the PIN?*.
 - **Remove from this phone**, after a confirmation: the phone forgets the passage, its PIN and the driver's preferences. The units keep their setup.
@@ -136,7 +137,7 @@ The driver types the new PIN twice and taps *Start*, then switches each unit off
 1. **Name**, up to 29 bytes, with a byte count. The units broadcast it, so anyone nearby can read it.
 2. **Units and gates:** the passage board. The driver stands at the end they usually drive in from, looking along the passage: that is end 0, at the bottom of the board. Each gate is a row with a slot on the left wall and one on the right, gate 1 nearest the driver. An empty slot's *Add* lists the new units nearby, each by the last 4 characters of its unit ID, with its signal and *Identify*. A filled slot opens the unit: its name, up to 16 bytes, which defaults to its gate and side, such as *Gate 1 left*; whether its own buzzer and LEDs signal the gap; *Identify*; and *Take it off this gate*. *Add a gate* adds a row at the top, up to 4, and any empty gate can be removed, unless it's the only one; the gates after it move down. Every gate needs at least one unit, and a passage has at most 8.
 3. **Gate positions**, only with more than one gate: for each gate after the first, its distance from the gate before it, in cm, measured along the passage from sensor to sensor. Gate 1 is at 0.
-4. **Zero offsets:** a card per unit with its live reading and the gap it gives, the offset in cm, and *Set zero*, which takes the current reading. With a flat board held on the line, the gap then reads 0.0.
+4. **Zero offsets:** a card per unit with its live reading and the gap it gives, or a dash while nothing is in front, the offset in cm, and *Set zero*, which takes the current reading. With a flat board held on the line, the gap then reads 0.0.
 5. **Thresholds:** the warning and critical gaps, 15.0 and 5.0 cm to start with, in 0.5 cm steps with − and +. The critical gap has to be smaller.
 6. **PIN**, 4 to 8 digits, typed twice.
 
@@ -160,17 +161,17 @@ Each unit in turn: *Waiting*, *Saving…*, *Saved* (*Reset* when deleting), *Fai
 
 ## About
 
-The app's version; the driving-aid notice again; the privacy note: nothing leaves the phone; the AGPL licence, with a link to the source code; and the open-source libraries with their licences.
+The app's version; the driving-aid notice again; the privacy note: nothing leaves the phone; the AGPL licence, with a link to the source code; the open-source libraries with their licences; and *Demo mode*, which runs the app on pretend units until it's next opened.
 
 ## Demo panel
 
-Only in debug builds, from the **Demo** tab. It sets the world the prototype pretends to be in:
+From the **Demo** tab, while demo mode is on. It sets the world the demo pretends to be in:
 
 - **Simulated pass:** forwards or reversing, from the usual end or the far end, with plenty of room, tight or too close. *Play a pass* drives a car through the open passage at walking pace.
 - **In range:** the garage, the garage and the front gate, nothing, or new units only.
 - **Problems:** low battery, sensor fault, setup out of date, the garage in use by another phone, the phone's connection limit, a unit that needs a newer app, a unit lost during a pass, and saving that fails once.
 - **This phone knows the PINs.** Otherwise the demo's own passages have the PIN 1234, and a passage set up in the demo has the PIN given to it.
-- **Bluetooth:** the phone's own, or pretend it's off, without permission or not supported.
+- **Bluetooth:** pretend it's ready, off, without permission or not supported. Demo mode never uses the phone's Bluetooth.
 
 ## Numbers and names
 

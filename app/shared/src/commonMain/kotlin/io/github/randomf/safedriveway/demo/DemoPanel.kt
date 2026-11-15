@@ -38,7 +38,7 @@ import io.github.randomf.safedriveway.resources.demo_bluetooth
 import io.github.randomf.safedriveway.resources.demo_bluetooth_not_supported
 import io.github.randomf.safedriveway.resources.demo_bluetooth_off
 import io.github.randomf.safedriveway.resources.demo_bluetooth_permission
-import io.github.randomf.safedriveway.resources.demo_bluetooth_phone
+import io.github.randomf.safedriveway.resources.demo_bluetooth_ready
 import io.github.randomf.safedriveway.resources.demo_course_clear
 import io.github.randomf.safedriveway.resources.demo_course_critical
 import io.github.randomf.safedriveway.resources.demo_course_tight
@@ -71,7 +71,7 @@ import io.github.randomf.safedriveway.ui.SectionTitle
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** The "Demo" pill on every screen of a debug build, which opens the demo panel. */
+/** The "Demo" tab on every screen while demo mode is on, which opens the demo panel. */
 @Composable
 fun DemoButton(backend: DemoBackend, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
@@ -199,7 +199,7 @@ private fun DemoPanel(backend: DemoBackend, onDismiss: () -> Unit) {
             SectionTitle(stringResource(Res.string.demo_bluetooth))
             Choices(
                 listOf(
-                    DemoBluetooth.Phone to Res.string.demo_bluetooth_phone,
+                    DemoBluetooth.Ready to Res.string.demo_bluetooth_ready,
                     DemoBluetooth.Off to Res.string.demo_bluetooth_off,
                     DemoBluetooth.PermissionNeeded to Res.string.demo_bluetooth_permission,
                     DemoBluetooth.NotSupported to Res.string.demo_bluetooth_not_supported

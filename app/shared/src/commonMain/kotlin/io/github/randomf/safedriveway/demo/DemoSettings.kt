@@ -5,7 +5,7 @@ import io.github.randomf.safedriveway.passage.End
 
 /** What the demo panel sets: the world the prototype pretends to be in. */
 data class DemoSettings(
-    val bluetooth: DemoBluetooth = DemoBluetooth.Phone,
+    val bluetooth: DemoBluetooth = DemoBluetooth.Ready,
     val inRange: DemoInRange = DemoInRange.Garage,
     val problems: Set<DemoProblem> = emptySet(),
     /** Whether this phone already knows the passages' PINs. */
@@ -15,9 +15,9 @@ data class DemoSettings(
     val course: DemoCourse = DemoCourse.Clear
 )
 
+/** What the demo pretends about the phone's Bluetooth, which it never uses. */
 enum class DemoBluetooth {
-    /** The phone's real Bluetooth and permission. */
-    Phone,
+    Ready,
     Off,
     PermissionNeeded,
     NotSupported
