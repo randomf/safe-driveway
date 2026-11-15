@@ -7,8 +7,9 @@ This folder holds the mobile app that runs on the phone in the car, and the task
 | [features.md](features.md) | What the first version of the app does |
 | [screens.md](screens.md) | What each screen shows, and how the driver moves between them |
 | [screenshots/](screenshots/) | Screenshots for the documentation, from the emulator on the demo backend, with the debug build's **Demo** tab painted out where it isn't the subject |
+| [artwork/](artwork/) | The app's icon and the header of the project's [README](../README.md), as SVG, and what Android's adaptive icon is made from |
 | [shared/](shared/) | The code for both platforms: the logic, the BLE connections and the screens, in Compose Multiplatform. Its texts are in `shared/src/commonMain/composeResources/`, in English (`values/`) and Czech (`values-cs/`). For now the screens run on a demo backend instead of the units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)) |
-| [androidApp/](androidApp/) | The Android application around `shared/`: its manifest, with the Bluetooth permissions, its icon and its activity, whose screen `shared/` sets. It has no Compose code of its own |
+| [androidApp/](androidApp/) | The Android application around `shared/`: its manifest, with the Bluetooth permissions, its icon (drawn from [artwork/](artwork/)) and its activity, whose screen `shared/` sets. It has no Compose code of its own |
 | [justfile](justfile) | The tasks listed under [Tasks](#tasks) |
 | [tools/Doctor.java](tools/Doctor.java) | The check that `just doctor` runs |
 | [gradle/libs.versions.toml](gradle/libs.versions.toml) | The versions of every library and Gradle plugin, and the Android versions the app supports |

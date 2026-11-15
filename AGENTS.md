@@ -27,7 +27,7 @@ Everything for the mobile app that runs on the phone in the car. `app/` is the r
 - The Android application around it, with its manifest and icon, in `app/androidApp/`. It has no Compose code: `shared` sets its screen. The iOS app will go in `app/iosApp/`
 - Tasks to build, run and check the app, run as `just` tasks from `app/`. [app/README.md](app/README.md) covers the setup and the tasks
 - App configuration, dependencies and build files: the Gradle build and its wrapper, `.editorconfig` and `app/gradle/libs.versions.toml`
-- App assets (icons, images, sounds, fonts, translations)
+- App assets (icons, images, sounds, fonts, translations). The master artwork, the app's icon and the README's header, is in `app/artwork/`; [app/artwork/README.md](app/artwork/README.md) says how the Android icon follows it
 - App tests, next to the code they test, such as `app/shared/src/commonTest/`
 - App documentation, such as [app/features.md](app/features.md) and [app/screens.md](app/screens.md), and the screenshots they show, in `app/screenshots/`
 
