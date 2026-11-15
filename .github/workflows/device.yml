@@ -21,7 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # uv installs the Python in device/.python-version and the tools locked in device/uv.lock.
-      - uses: astral-sh/setup-uv@v10
+      # setup-uv publishes only full version tags, no v10.
+      - uses: astral-sh/setup-uv@v10.3.3
       - uses: extractions/setup-just@v4
       - run: just lint
       - run: just test
