@@ -3,8 +3,9 @@
 `just bringup` sends this file and the sensor driver in lib/ to the board's
 RAM, calls the functions below one at a time and asks the person at the
 computer about what only they can see or hear. Nothing is written to the
-board's filesystem. Only the distance checks import the driver, so a problem
-with it leaves the other checks working.
+board's filesystem but, at the end, the notes for the firmware. Only the
+distance checks import the driver, so a problem with it leaves the other
+checks working.
 
 To run a check by hand, open the REPL with `just repl`, which mounts this folder
 as the current directory, then `from bringup import *` and call the functions

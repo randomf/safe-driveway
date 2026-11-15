@@ -10,7 +10,8 @@ The repository has three top-level areas, and `.github/` for continuous integrat
 
 Everything needed to build the physical device that is installed at the passage:
 
-- Code that runs on the board, in MicroPython on an ESP32, in `device/board/`. The firmware goes in `device/board/firmware/`, and libraries it shares with the bring-up checks, such as the sensor driver, in `device/board/lib/`
+- Code that runs on the board, in MicroPython on an ESP32, in `device/board/`. The firmware goes in `device/board/firmware/`, and libraries it shares with the bring-up checks, such as the sensor driver, in `device/board/lib/`. [device/firmware.md](device/firmware.md) describes the firmware
+- Tests of the firmware's pure modules, which run on the computer with pytest, in `device/tests/`
 - Code that runs on the computer to flash and test the board, in `device/host/`, run as `just` tasks from `device/`. [device/README.md](device/README.md) covers the setup and the tasks
 - Wiring diagrams, schematics and pin assignments
 - Bill of materials and parts lists
@@ -43,7 +44,7 @@ Documentation that only concerns one side stays next to that side, in `device/` 
 
 ### `.github/` — continuous integration
 
-GitHub Actions workflows in `.github/workflows/`, one per area that CI checks, such as `app.yml` for the app.
+GitHub Actions workflows in `.github/workflows/`, one per area that CI checks: `app.yml` for the app and `device.yml` for the device.
 
 ## Rules
 
@@ -55,11 +56,12 @@ GitHub Actions workflows in `.github/workflows/`, one per area that CI checks, s
 - Keep the repository root for project-level files only: `README.md`, `AGENTS.md`, `LICENSE`, the VS Code workspace `safe-driveway.code-workspace` and similar. `device/` and `app/` are folders of their own in the workspace.
 - Add every device task to `device/justfile` as a `just` task. Set the MicroPython version only in `device/micropython.toml`.
 - Add every app task to `app/justfile` as a `just` task. Set the app's library and plugin versions, and the Android versions it supports, only in `app/gradle/libs.versions.toml`. The exceptions are the ones [app/README.md](app/README.md#versions) lists: Gradle, the JDK, and the toolchain resolver plugin, which `app/settings.gradle.kts` has to name before the catalog is available.
-- Write code in a functional style wherever the language allows: immutable data, pure functions that return new values, and `map`, `filter` and folds over loops that mutate. Arrange it as a functional core and an imperative shell: side effects such as Bluetooth, storage, hardware, the clock and UI state stay in a thin shell around pure logic, as the app's `passage` package shows. On the board, a loop that runs many times a second may reuse its buffers to spare MicroPython's garbage collector.
+- Write code in a functional style wherever the language allows: immutable data, pure functions that return new values, and `map`, `filter` and folds over loops that mutate. Arrange it as a functional core and an imperative shell: side effects such as Bluetooth, storage, hardware, the clock and UI state stay in a thin shell around pure logic, as the app's `passage` package and the firmware's `main.py` show. On the board, a loop that runs many times a second may reuse its buffers to spare MicroPython's garbage collector.
+- The firmware's pure modules, every module in `device/board/firmware/` but `main.py`, run in both MicroPython and CPython: use only what both have, and nothing from `machine`, `bluetooth` or `micropython`.
 - Code in `app/shared/src/commonMain/` has to build for iOS too: put anything that uses an Android API in `src/androidMain/`. Put every text the app shows in its string resources, in English and Czech.
-- Run `just lint` in `device/` before finishing a change to device code, and in `app/` before finishing a change to app code.
+- Run `just lint` and `just test` in `device/` before finishing a change to device code, and `just lint` in `app/` before finishing a change to app code.
 - The project is licensed under the license in [LICENSE](LICENSE). Do not modify it.
 - Keep documentation up to date. Update the affected docs in the same change as the code, hardware or design they describe, never as a later follow-up. This covers [README.md](README.md), the files in `doc/`, and the documentation in `device/` and `app/`, and includes this file when the repository layout or rules change.
 - Retake the screenshots in `app/screenshots/` in the same change when the app's screens visibly change: a layout, colours, texts or what a screenshotted screen shows. Retake every screenshot of an affected screen, in the same state as before, so that the docs never show a screen the app no longer has. [app/README.md](app/README.md#screenshots) says how.
 - If a change contradicts an accepted ADR, add a new ADR that supersedes it instead of leaving the old one stale.
-- Before finishing a task, check whether any documentation mentions what you changed (hardware list, pin assignments, protocol, setup steps) and fix what no longer matches. Pin assignments and the expected sensor also live in the bring-up checks, `device/board/bringup.py` and `device/host/bringup.py`.
+- Before finishing a task, check whether any documentation mentions what you changed (hardware list, pin assignments, protocol, setup steps) and fix what no longer matches. Pin assignments and the expected sensor also live in the bring-up checks, `device/board/bringup.py` and `device/host/bringup.py`, and the pin assignments in the firmware, `device/board/firmware/main.py`. The lights and sounds are described in `device/firmware.md` and ADR 0010.

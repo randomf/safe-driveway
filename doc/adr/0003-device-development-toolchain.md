@@ -1,6 +1,6 @@
 # 3. Development toolchain for the device
 
-- **Status:** Accepted
+- **Status:** Accepted. That bring-up stores nothing is superseded by [ADR 0010](0010-device-firmware.md), which has it save its notes on the board
 - **Date:** 2026-11-03
 
 ## Context

@@ -2,7 +2,7 @@
 
 This document describes how to wire and assemble one unit of the first Safe Driveway prototype. Why these parts were chosen is recorded in [ADR 0001](../doc/adr/0001-prototype-hardware.md), and the choice of Bluetooth Low Energy in [ADR 0002](../doc/adr/0002-ble-communication.md).
 
-This document covers hardware only. The distance thresholds are set per passage from the app, and when the unit measures and signals is set by the protocol in [doc/ble-protocol.md](../doc/ble-protocol.md). The blink and beep patterns and what "ready" means are defined by the firmware and will be documented with it. How to set up a computer to flash and test a unit is in [README.md](README.md).
+This document covers hardware only. The distance thresholds are set per passage from the app, and when the unit measures and signals is set by the protocol in [doc/ble-protocol.md](../doc/ble-protocol.md). The blink and beep patterns are defined by the firmware, see [firmware.md](firmware.md#lights-and-sounds). How to set up a computer to flash and test a unit is in [README.md](README.md).
 
 ## What each part does
 
@@ -11,7 +11,7 @@ This document covers hardware only. The distance thresholds are set per passage 
 | ESP32 board | Runs the firmware, talks to the phone over BLE using its built-in radio, and charges the battery over USB-C |
 | VL53L1X laser sensor | Measures the distance from the unit to the side of the car |
 | YL-44 buzzer | Signals the distance with sound |
-| Green LED | Shows that the unit is ready |
+| Green LED | Shows the unit's state: on, connected to a phone, a car in front, or a fault |
 | Red LED | Signals the distance with light |
 | Rocker switch | Switches the unit on and off |
 | Battery divider (optional) | Lets the firmware measure the battery voltage |
@@ -258,7 +258,11 @@ Fix the board and the battery, route the wires, add strain relief and plug the U
 
 ### 9. Run the bring-up tests
 
-Run `just bringup` and answer its questions, then check power and charging by hand. See [Bring-up tests](#bring-up-tests). Close the lid only after every test passes.
+Run `just bringup` and answer its questions, and let it save its notes for the firmware on the board. Then check power and charging by hand. See [Bring-up tests](#bring-up-tests). Close the lid only after every test passes.
+
+### 10. Install the firmware
+
+Run `just install`. The board restarts into the firmware: green and red light for a moment, then green flashes once every 3 s. Check that the unit answers with `just ble watch`, see [firmware.md](firmware.md#testing-without-the-app).
 
 ## Bring-up tests
 
@@ -268,7 +272,7 @@ Run them with the board connected over USB, through the panel socket. The batter
 just bringup
 ```
 
-The run tests the board, the laser sensor, its distance readings and clear view, the LEDs, the buzzer and, if fitted, the battery divider. It verifies the board and the sensor by itself, and asks you to move your hand or aim the unit and to answer yes/no questions about what you see and hear. A failed test prints a hint and a link to its section below, and the run goes on with the next one. At the end it prints a summary, the notes the firmware needs and the tests still to do by hand.
+The run tests the board, the laser sensor, its distance readings and clear view, the LEDs, the buzzer and, if fitted, the battery divider. It verifies the board and the sensor by itself, and asks you to move your hand or aim the unit and to answer yes/no questions about what you see and hear. A failed test prints a hint and a link to its section below, and the run goes on with the next one. At the end it prints a summary, the notes the firmware needs and the tests still to do by hand, and offers to save the notes in `/unit.json` on the board, where the firmware reads them.
 
 To run only some tests, name them, for example while wiring: `just bringup sensor leds`. The board test always runs first. The code of each test is in [board/bringup.py](board/bringup.py), which also says how to run a test by hand in the REPL.
 
@@ -313,7 +317,7 @@ The run lights the green LED, then the red one, then both, and asks each time wh
 
 The run sets pin `25` HIGH, then LOW, and asks each time whether the buzzer sounds. From the answers it tells which level sounds the buzzer.
 
-- On the usual low-triggered YL-44, LOW sounds the buzzer and HIGH silences it. If yours does the opposite, it's a high-triggered variant. The run says so under "Note for the firmware". Note it down, since the firmware has to know.
+- On the usual low-triggered YL-44, LOW sounds the buzzer and HIGH silences it. If yours does the opposite, it's a high-triggered variant. The run says so under "Note for the firmware" and offers to save it on the board. Let it: without the note, the firmware takes a low-triggered buzzer and sounds a high-triggered one whenever it should be silent.
 - **It sounds at both levels:** the YL-44 is probably powered from USB 5 V or the battery. Power it from `3V`, see [Signal wiring](#signal-wiring).
 - **It stays silent:** check the YL-44's `VCC` (splice S1), `GND` (splice S3) and `I/O` (pin `25`).
 - **It chirps or hums faintly while the board boots:** add a 10 kΩ resistor from pin `25` to `3V`.
@@ -322,7 +326,7 @@ The run sets pin `25` HIGH, then LOW, and asks each time whether the buzzer soun
 
 Only for units with the battery divider. The full run asks whether it is fitted; `just bringup battery` doesn't ask. When the run asks, connect the battery and switch the unit on.
 
-The run reads the battery voltage on pin `35`, which should be about 3.0–4.2 V. It then asks for a multimeter reading across the battery and prints the offset between the two. Note the offset down.
+The run reads the battery voltage on pin `35`, which should be about 3.0–4.2 V. It then asks for a multimeter reading across the battery and prints the offset between the two. It offers to save the offset and that the divider is fitted on the board, for the firmware's battery level.
 
 - **About 0 V:** check that the unit is switched on and that the top of the divider is wired to the switch's board-side terminal.
 - **Outside 3.0–4.2 V:** check both 100 kΩ resistors.
@@ -345,9 +349,11 @@ These can't be tested over USB, so check them by hand:
 
 ## Notes for the firmware
 
+The firmware in [board/firmware/](board/firmware/) follows these:
+
 - Set pin `25` to the buzzer's "silent" level as early as possible at start-up.
 - Drive `16` (XSHUT) open-drain. Never push it high, since a module may run the sensor's logic at 2.8 V.
-- Read `17` (GPIO1) with the internal pull-up enabled.
+- Read `17` (GPIO1) with the internal pull-up enabled. The firmware doesn't use it yet: it asks the sensor over I2C whether a measurement is ready.
 - Treat battery monitoring as optional and configurable, because units without the divider read nothing useful on pin `35`.
 - Store which side of the passage the unit is on as a setting. The hardware is the same for both sides.
 

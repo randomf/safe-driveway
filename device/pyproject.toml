@@ -4,8 +4,10 @@ version = "0.1.0"
 description = "Host-side tools for flashing and testing the Safe Driveway remote device"
 requires-python = ">=3.12"
 dependencies = [
+    "bleak>=3.0.2",
     "esptool>=5.6.0",
     "mpremote>=1.29.0",
+    "mpy-cross>=1.29.0.post2",
     "pyserial>=3.5",
 ]
 
@@ -14,6 +16,7 @@ package = false
 
 [dependency-groups]
 dev = [
+    "pytest>=9.2.0",
     "ruff>=0.17.3",
 ]
 
@@ -21,12 +24,25 @@ dev = [
 line-length = 100
 # Leave the code examples in the docs as they are written.
 extend-exclude = [".stubs", "*.md"]
+# Where imports such as `firmware` and `examples` come from.
+src = [".", "board", "tests"]
 
 [tool.ruff.lint]
 extend-select = ["I", "B", "UP"]
 
-# Editor type checking for the host tools. Board code has its own settings with
-# the MicroPython stubs in board/pyrightconfig.json.
+[tool.ruff.lint.per-file-ignores]
+# MicroPython has neither zip(strict=...) nor itertools.pairwise.
+"board/**" = ["B905", "RUF007"]
+
+# The firmware's pure modules run in CPython too: the tests and the host tools
+# import them from board/.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["board", "tests"]
+
+# Editor type checking for the host tools and the tests. Board code has its own
+# settings with the MicroPython stubs in board/pyrightconfig.json.
 [tool.pyright]
-include = ["host"]
+include = ["host", "tests"]
+extraPaths = ["board", "tests"]
 typeCheckingMode = "standard"

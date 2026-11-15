@@ -9,6 +9,8 @@ the end of this file.
     tof.configure(short=True, timing_budget_ms=50)
     tof.start()
     distance_mm, status = tof.read()  # a real target when status is in VALID
+    if tof.data_ready():  # or, without waiting
+        distance_mm, status = tof.result()
     tof.stop()
 """
 
@@ -217,6 +219,10 @@ class VL53L1X:
     def read(self):
         """Wait for the next measurement: (distance in mm, status). See VALID and TOO_CLOSE."""
         self._wait_for_data()
+        return self.result()
+
+    def result(self):
+        """The measurement that data_ready() reported, without waiting: (distance in mm, status)."""
         raw_status = self._read8(_RESULT__RANGE_STATUS) & 0x1F
         distance = self._read16(_RESULT__FINAL_CROSSTALK_CORRECTED_RANGE_MM_SD0)
         self._clear_interrupt()

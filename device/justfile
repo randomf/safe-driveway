@@ -39,6 +39,31 @@ distance:
 bringup *checks:
     @uv run python -m host.bringup {{ checks }}
 
+# Install the firmware, which then starts whenever the unit is switched on
+[no-exit-message]
+install:
+    @uv run python -m host.install
+
+# Show what the firmware prints over USB, until Ctrl-C; [--reset] starts the board as if switched on
+[no-exit-message]
+monitor *args:
+    @uv run python -m host.monitor {{ args }}
+
+# Act as the phone over this computer's Bluetooth: scan, watch, setup, identify, unlock, set-pin, forget
+[no-exit-message, positional-arguments, unix]
+ble *args:
+    @uv run python -m host.ble "$@"
+
+# PowerShell can't take positional arguments, so a passage name can't contain spaces here.
+[no-exit-message, windows]
+ble *args:
+    @uv run python -m host.ble {{ args }}
+
+# Run the tests of the firmware's pure logic on this computer
+[no-exit-message]
+test *args:
+    @uv run pytest {{ args }}
+
 # Install MicroPython type stubs so editors understand the code in board/
 [no-exit-message]
 stubs:
