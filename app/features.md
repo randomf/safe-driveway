@@ -12,6 +12,7 @@ This file describes what the first version supports, and [screens.md](screens.md
 - **Nothing leaves the phone.** There are no accounts, no cloud, no analytics and no crash reporting.
 - **Languages.** English and Czech. Every text the app shows lives in resource files from the start.
 - **Open source.** An About screen shows the app's version, its licence with a link to the source code, the libraries it uses and the privacy note.
+- **A demo mode.** About switches the app onto pretend units and a simulated car, to try it without units or Bluetooth. It is off again each time the app opens.
 
 ## Concepts
 
@@ -38,11 +39,12 @@ This file describes what the first version supports, and [screens.md](screens.md
 
 - The driver opens the app before driving into the passage. It picks the passage whose units it can see, connects to all of them and keeps the screen on.
 - If units from more than one passage are in range, the app asks which passage the driver means and remembers the answer for those units.
-- The app disconnects from the units when it goes to the background, or after a few minutes with no car at any gate.
+- The app disconnects from the units when it leaves the screen, and when no unit has seen a car for 5 minutes. The main screen then offers to reconnect.
+- Before it disconnects on purpose, it tells the units to stop measuring. While a unit saw the car in the last 5 seconds, it doesn't: the car may be between the walls, and the units keep warning for 5 minutes, as after a lost link.
 
 ### Setting up and sharing a passage
 
-The passage's setup, including the list of all its units, is stored on every one of its units, with a version number, so that any phone can read it and knows how many units to expect. Each phone stores only its driver's preferences (whether they drive into the passage forwards or reverse in, sound on or off, and the volume) and the passage PIN once it has been entered on that phone, in the platform's secure storage.
+The passage's setup, including the list of all its units, is stored on every one of its units, with a version number, so that any phone can read it and knows how many units to expect. Each phone stores only the passages it has used, its driver's preferences (whether they drive into the passage forwards or reverse in, sound on or off, and the volume) and the passage PIN once it has been entered on that phone, with the PIN before the last change it made, encrypted with a key that the platform's secure storage holds ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)).
 
 The first phone sets up a passage like this:
 
@@ -59,6 +61,7 @@ After that:
 - Any phone with the app can connect to the passage and show its readings. A second phone opened near the units finds the passage and works straight away.
 - Changing the setup needs the passage PIN, of 4 to 8 digits. The PIN guards against accidents and casual mischief, not against a determined attacker, because it travels over BLE unencrypted. A forgotten PIN is reset by switching each unit off and on and setting a new PIN within 2 minutes. After 5 wrong PINs in a row, a unit refuses the PIN until it is switched off and on.
 - If a unit was switched off while the setup changed, the units disagree. The app uses the setup with the highest version number. If the phone knows the PIN, it writes that setup to the units that are behind; otherwise it shows them as out of date.
+- A unit that was switched off while this phone changed the PIN still holds the old one. The phone unlocks it with the old PIN and gives it the new one. A unit that refuses every PIN the phone knows makes the phone forget them, rather than use up the unit's tries each time it connects; the driver types the PIN the next time it's needed.
 - A unit that was forgotten or replaced while out of reach still carries the passage's ID when it comes back. A phone that knows the PIN resets it to a unit that belongs to no passage; other phones leave it alone.
 - The app remembers every passage it has used, for example a garage and a gate. Removing a passage from a phone forgets it, its PIN and the driver's preferences on that phone; the units keep it, and it comes back when the phone next opens it.
 - Deleting a passage, with its PIN, resets every unit in reach to belong to no passage and removes the passage from that phone. A unit out of reach keeps the passage: when it comes back, the passage shows up again with that unit only, to be deleted again.
@@ -84,9 +87,10 @@ What the screen shows:
 ### Alarms and suggestions
 
 - Between the warning and the critical threshold, the phone beeps, faster as the gap closes. Below the critical threshold, it plays a continuous tone.
-- Alarms play even when the phone is on silent or Do Not Disturb, at a volume set in the app. Other audio, such as music or navigation, is turned down while the car is in the passage.
+- Alarms play even when the phone is on silent, and through Do Not Disturb unless the driver has blocked alarms there. Their volume is set in the app, as a part of the phone's alarm volume, which the app never changes; the passage's settings say when that is low. Other audio, such as music or navigation, is turned down while the car is in the passage.
+- No alarm sounds while the units' setup is being changed, when a board held on the line would set it off.
 - The sound goes through the phone's current audio output. Bluetooth car audio commonly adds 100–200 ms of delay, so the screen and the units' own buzzers are the fastest warnings.
-- The units' own buzzers and red LEDs signal the gap too, unless the passage's setup switches them off. They signal while a phone is connected, for the first 10 minutes after they are switched on, and for 5 minutes after the connection is lost, so that they warn a driver with no phone or with a flaky link. They stay quiet after the app disconnects on purpose, and while their setup is being changed.
+- The units' own buzzers and red LEDs signal the gap too, unless the passage's setup switches them off. They signal while a phone is connected, for the first 10 minutes after they are switched on, and for 5 minutes after the connection is lost, so that they warn a driver with no phone or with a flaky link. They stay quiet after the app disconnects on purpose with no car in front, and while their setup is being changed.
 - The suggestion arrow says how to turn the steering wheel: left, right or keep straight. It shows only while a gate sees the car.
   - When two gates see the car, the app projects the car's current heading to the next gate ahead. If one predicted gap there is smaller than the other by more than a small margin, it suggests turning the wheel to even them out.
   - When one gate sees the car, it suggests moving towards the bigger gap.

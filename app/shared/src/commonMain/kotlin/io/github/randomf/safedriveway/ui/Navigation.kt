@@ -70,10 +70,18 @@ private class PinRequest(val passage: PassageId, val then: () -> Unit)
 
 /**
  * Moves between the screens. The passage of the topmost main screen on the back stack stays
- * open, so its units stay connected while its settings and setup are on top.
+ * open, so its units stay connected while its settings and setup are on top. About switches
+ * [demoMode] with [onDemoMode]; [phoneAlarmVolume] tells the passage settings whether the alarm
+ * can be heard.
  */
 @Composable
-fun AppNavigation(backend: Backend, version: String) {
+fun AppNavigation(
+    backend: Backend,
+    version: String,
+    demoMode: Boolean,
+    onDemoMode: (Boolean) -> Unit,
+    phoneAlarmVolume: () -> Float
+) {
     val backStack = remember { mutableStateListOf<Screen>(Screen.Scanning) }
     // The setup being made or changed: the one piece of it the screens share.
     var draft by remember { mutableStateOf<SetupDraft?>(null) }
@@ -243,10 +251,11 @@ fun AppNavigation(backend: Backend, version: String) {
                         }
                     },
                     onForgotPin = { push(Screen.PinReset(key.passage)) },
-                    onRemoved = { reset(Screen.Passages) }
+                    onRemoved = { reset(Screen.Passages) },
+                    phoneAlarmVolume = phoneAlarmVolume
                 )
             }
-            entry<Screen.About> { AboutScreen(version, ::pop) }
+            entry<Screen.About> { AboutScreen(version, demoMode, onDemoMode, ::pop) }
             entry<Screen.PinReset> { key ->
                 PinResetScreen(backend, key.passage, ::pop, onDone = ::pop)
             }

@@ -230,7 +230,7 @@ fun ZeroOffsetsStep(
                                 parseCentimetres(value)?.let { mm ->
                                     onChange(
                                         draft.update(unit.id) {
-                                            it.copy(zeroOffsetMm = mm.coerceAtLeast(0))
+                                            it.copy(zeroOffsetMm = mm.coerceIn(0, Limits.MAX_MM))
                                         }
                                     )
                                 }

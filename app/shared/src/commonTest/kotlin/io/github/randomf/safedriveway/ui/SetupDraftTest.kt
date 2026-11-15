@@ -1,10 +1,13 @@
 package io.github.randomf.safedriveway.ui
 
 import io.github.randomf.safedriveway.demo.DemoWorld
+import io.github.randomf.safedriveway.passage.Limits
 import io.github.randomf.safedriveway.passage.Side
 import io.github.randomf.safedriveway.passage.UnitId
 import io.github.randomf.safedriveway.ui.setup.SetupDraft
+import io.github.randomf.safedriveway.ui.setup.SetupProblem
 import io.github.randomf.safedriveway.ui.setup.Step
+import io.github.randomf.safedriveway.ui.setup.problems
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -74,5 +77,13 @@ class SetupDraftTest {
         val draft = SetupDraft.forEdit(DemoWorld.garage)
         assertFalse(draft.changed)
         assertEquals(DemoWorld.garage.version + 1, draft.toWrite().version)
+    }
+
+    @Test
+    fun theLastGateIsAtMost65mFromTheFirst() {
+        val far = SetupDraft.forNew().addGate().withSpacings(listOf(Limits.MAX_MM + 1))
+        assertTrue(SetupProblem.BadSpacing in far.setup.problems(Step.Positions))
+        val near = SetupDraft.forNew().addGate().withSpacings(listOf(Limits.MAX_MM))
+        assertTrue(near.setup.problems(Step.Positions).isEmpty())
     }
 }

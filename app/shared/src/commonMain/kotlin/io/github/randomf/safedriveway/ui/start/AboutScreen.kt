@@ -1,10 +1,14 @@
 package io.github.randomf.safedriveway.ui.start
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import io.github.randomf.safedriveway.resources.Res
 import io.github.randomf.safedriveway.resources.about
@@ -17,6 +21,9 @@ import io.github.randomf.safedriveway.resources.about_privacy_text
 import io.github.randomf.safedriveway.resources.about_source_code
 import io.github.randomf.safedriveway.resources.about_version
 import io.github.randomf.safedriveway.resources.app_name
+import io.github.randomf.safedriveway.resources.demo
+import io.github.randomf.safedriveway.resources.demo_mode
+import io.github.randomf.safedriveway.resources.demo_mode_hint
 import io.github.randomf.safedriveway.resources.library_androidx
 import io.github.randomf.safedriveway.resources.library_compose
 import io.github.randomf.safedriveway.resources.library_icons
@@ -32,9 +39,17 @@ import org.jetbrains.compose.resources.stringResource
 /** Where the app's source code is, as the AGPL asks. */
 private const val SOURCE_URL = "https://github.com/randomf/safe-driveway"
 
-/** The app's version, its licence and libraries, the privacy note and the driving-aid notice. */
+/**
+ * The app's version, its licence and libraries, the privacy note, the driving-aid notice, and demo
+ * mode, which is seldom needed.
+ */
 @Composable
-fun AboutScreen(version: String, onBack: () -> Unit) {
+fun AboutScreen(
+    version: String,
+    demoMode: Boolean,
+    onDemoMode: (Boolean) -> Unit,
+    onBack: () -> Unit
+) {
     val uriHandler = LocalUriHandler.current
     ScreenScaffold(stringResource(Res.string.about), onBack) {
         Text(stringResource(Res.string.app_name), style = MaterialTheme.typography.headlineSmall)
@@ -62,6 +77,15 @@ fun AboutScreen(version: String, onBack: () -> Unit) {
                 Res.string.library_kable,
                 Res.string.library_icons
             ).forEach { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
+        }
+
+        SectionTitle(stringResource(Res.string.demo))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(Res.string.demo_mode))
+                Hint(stringResource(Res.string.demo_mode_hint))
+            }
+            Switch(demoMode, onCheckedChange = onDemoMode)
         }
     }
 }

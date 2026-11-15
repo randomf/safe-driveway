@@ -236,7 +236,7 @@ Readings flow from the moment a unit is connected; the app receives them once it
 
 ### Disconnecting
 
-Before it disconnects from a unit on purpose, for example when it goes to the background, the app sends Release.
+Before it disconnects from a unit on purpose, for example when it goes to the background, the app sends Release. It leaves Release out while a unit of the passage has had a gap in the last 5 s: the car may still be between the walls, so the units keep warning for 5 minutes, as after a lost link.
 
 ### Setting up a new passage
 

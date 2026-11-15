@@ -16,6 +16,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,6 +44,7 @@ import io.github.randomf.safedriveway.resources.notice_responsible
 import io.github.randomf.safedriveway.resources.notice_title
 import io.github.randomf.safedriveway.resources.open_settings
 import io.github.randomf.safedriveway.resources.scanning
+import io.github.randomf.safedriveway.resources.try_demo
 import io.github.randomf.safedriveway.resources.which_passage_hint
 import io.github.randomf.safedriveway.resources.which_passage_title
 import io.github.randomf.safedriveway.ui.Hint
@@ -74,9 +76,16 @@ fun NoticeScreen(onAccept: () -> Unit) {
     }
 }
 
-/** Shown instead of everything else while Bluetooth isn't ready. */
+/**
+ * Shown instead of everything else while Bluetooth isn't ready. [onTryDemo], when set, offers demo
+ * mode, which needs no Bluetooth.
+ */
 @Composable
-fun BluetoothScreen(status: BluetoothStatus, onAction: () -> Unit) {
+fun BluetoothScreen(
+    status: BluetoothStatus,
+    onAction: () -> Unit,
+    onTryDemo: (() -> Unit)? = null
+) {
     Column(
         Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
@@ -95,6 +104,7 @@ fun BluetoothScreen(status: BluetoothStatus, onAction: () -> Unit) {
         status.action?.let { action ->
             Button(onClick = onAction) { Text(stringResource(action)) }
         }
+        onTryDemo?.let { TextButton(onClick = it) { Text(stringResource(Res.string.try_demo)) } }
     }
 }
 

@@ -6,9 +6,10 @@ This folder holds the mobile app that runs on the phone in the car, and the task
 |---|---|
 | [features.md](features.md) | What the first version of the app does |
 | [screens.md](screens.md) | What each screen shows, and how the driver moves between them |
-| [screenshots/](screenshots/) | Screenshots for the documentation, from the emulator on the demo backend, with the debug build's **Demo** tab painted out where it isn't the subject |
+| [e2e-tests.md](e2e-tests.md) | The tests to replay on a phone and a unit, step by step, and what passes |
+| [screenshots/](screenshots/) | Screenshots for the documentation, from the emulator in demo mode, with the **Demo** tab painted out where it isn't the subject |
 | [artwork/](artwork/) | The app's icon and the header of the project's [README](../README.md), as SVG, and what Android's adaptive icon is made from |
-| [shared/](shared/) | The code for both platforms: the logic, the BLE connections and the screens, in Compose Multiplatform. Its texts are in `shared/src/commonMain/composeResources/`, in English (`values/`) and Czech (`values-cs/`). For now the screens run on a demo backend instead of the units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)) |
+| [shared/](shared/) | The code for both platforms: the logic, the BLE connections and the screens, in Compose Multiplatform. Its texts are in `shared/src/commonMain/composeResources/`, in English (`values/`) and Czech (`values-cs/`). The screens run on the units, or in demo mode on pretend ones ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md), [ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)) |
 | [androidApp/](androidApp/) | The Android application around `shared/`: its manifest, with the Bluetooth permissions, its icon (drawn from [artwork/](artwork/)) and its activity, whose screen `shared/` sets. It has no Compose code of its own |
 | [justfile](justfile) | The tasks listed under [Tasks](#tasks) |
 | [tools/Doctor.java](tools/Doctor.java) | The check that `just doctor` runs |
@@ -66,11 +67,28 @@ ANDROID_SERIAL=emulator-5554 just run
 
 Run `just lint` before finishing a change. The code style is ktlint's Android Studio style, set in [.editorconfig](.editorconfig), so *Code > Reformat Code* in Android Studio and `just fmt` agree.
 
-The emulator that Android Studio's wizard creates runs the app, but it has no real Bluetooth: test anything that talks to the units on a phone.
+The emulator that Android Studio's wizard creates runs the app, but it has no real Bluetooth: use [demo mode](#demo-mode) there, and test anything that talks to the units on a phone.
 
-## Demo panel
+## Testing with a unit
 
-For now the app has no BLE code: its screens run on pretend units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)), so they work on any phone or the emulator. In a debug build, such as `just run` installs, the **Demo** tab on the right edge of every screen opens the demo panel. It chooses which passages are in range and which problems the units have, and *Play a pass* drives a simulated car through the open passage. The demo's own passages have the PIN 1234, and a passage set up in the demo has the PIN given to it. [screens.md](screens.md#demo-panel) lists what it can do.
+The app connects to the units over Bluetooth Low Energy ([ADR 0011](../doc/adr/0011-app-connections-storage-and-sounds.md)). With a unit on this computer's USB and the phone on another, both sides can be watched while the app runs. [e2e-tests.md](e2e-tests.md) uses these to test the app against the unit:
+
+- **The app's log:** it prints each connection, command and Release:
+
+  ```bash
+  adb logcat | grep SafeDriveway
+  ```
+
+- **The unit's log:** `just monitor` in [device/](../device/README.md) shows each connection, command and change of its flags.
+- **A second phone:** `just ble watch` in `device/` connects this computer to the unit, so the app shows it as in use by another phone, and takes over once it lets go.
+- **The PIN reset window:** `just monitor --reset` restarts the unit as switching it on does, which opens its 2-minute window for *Forgot the PIN?*.
+- **The phone's screen** stays awake on the main screen, but not on the others. *Developer options > Stay awake* keeps it on while it charges.
+
+Installing the app again while it is connected to a unit kills it without letting go, and Android can then take about 25 s to connect to the unit again. Go back to the passages list first.
+
+## Demo mode
+
+To try the app without units, or on the emulator, switch on *Demo mode* at the bottom of About, the *i* on the passages list, or tap *Try the demo* on the Bluetooth screen. The screens then run on pretend units ([ADR 0009](../doc/adr/0009-app-screens-and-navigation.md)), with no Bluetooth, and the **Demo** tab on the right edge of every screen opens the demo panel. It chooses which passages are in range and which problems the units have, and *Play a pass* drives a simulated car through the open passage. The demo's own passages have the PIN 1234, and a passage set up in the demo has the PIN given to it. [screens.md](screens.md#demo-panel) lists what it can do. Each time the app opens, it starts on the real units again.
 
 <img src="screenshots/demo-panel.png" width="240" alt="The demo panel over the main screen: the simulated pass's direction, end and course, and Play a pass">
 
@@ -96,13 +114,13 @@ The screenshots in [screenshots/](screenshots/) appear in [screens.md](screens.m
    adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
    ```
 
-3. Put the screen in the state the table below gives, with the [demo panel](#demo-panel), and take it at full size. For a pass, take a few in a row and keep the one that matches:
+3. Switch on [demo mode](#demo-mode), put the screen in the state the table below gives, with the demo panel, and take it at full size. For a pass, take a few in a row and keep the one that matches:
 
    ```bash
    adb exec-out screencap -p > shot.png
    ```
 
-4. Save it under the same name at half size, 540 × 1200, as a PNG with 256 colours. Where the **Demo** tab lies over plain background, paint it out with the background around it; `demo-panel.png` keeps it.
+4. Save it under the same name at half size, 540 × 1200, as a PNG with 256 colours. Where the **Demo** tab lies over plain background, paint it out with the background around it; `demo-panel.png` keeps it. Paint out, too, any status icon that the emulator shows despite SystemUI's demo mode, such as its reminder to set a screen lock.
 5. Update the image's `alt` text where it's shown, which says what the screenshot shows, such as the gaps.
 
 | File | Screen and state |

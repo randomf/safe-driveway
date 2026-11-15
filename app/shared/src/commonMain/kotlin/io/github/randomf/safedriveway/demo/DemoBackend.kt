@@ -499,30 +499,11 @@ class DemoBackend(private val scope: CoroutineScope) : Backend {
         }
     }
 
-    private fun setWriteState(id: UnitId, state: WriteState) {
-        _writing.update { progress ->
-            progress?.copy(
-                units = progress.units.map {
-                    if (it.id ==
-                        id
-                    ) {
-                        it.copy(state = state)
-                    } else {
-                        it
-                    }
-                }
-            )
-        }
-    }
+    private fun setWriteState(id: UnitId, state: WriteState) =
+        _writing.update { it?.with(id, state) }
 
     override fun retryWrite() {
-        _writing.update { progress ->
-            progress?.copy(
-                units = progress.units.map {
-                    if (it.state == WriteState.Failed) it.copy(state = WriteState.Waiting) else it
-                }
-            )
-        }
+        _writing.update { it?.retried() }
         runWrite(failOnce = false)
     }
 
@@ -530,8 +511,7 @@ class DemoBackend(private val scope: CoroutineScope) : Backend {
     private fun finishWrite() {
         val pending = pendingWrite ?: return
         pendingWrite = null
-        val missed = _writing.value?.units.orEmpty().filter { it.state != WriteState.Done }
-        pending.onDone(missed.map { it.id }.toSet())
+        pending.onDone(_writing.value?.missed.orEmpty())
     }
 
     override fun clearWrite() {
@@ -563,11 +543,8 @@ class DemoBackend(private val scope: CoroutineScope) : Backend {
         }
     }
 
-    private fun setPinResetState(id: UnitId, state: PinResetState) {
-        _pinReset.update { progress ->
-            progress?.copy(units = progress.units.map { if (it.first == id) id to state else it })
-        }
-    }
+    private fun setPinResetState(id: UnitId, state: PinResetState) =
+        _pinReset.update { it?.with(id, state) }
 
     override fun clearPinReset() {
         pinResetJob?.cancel()
