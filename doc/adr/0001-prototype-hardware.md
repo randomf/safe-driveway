@@ -29,9 +29,9 @@ The unit is built from these parts:
 - **Battery:** an 803450 Li-Po cell, 3.7 V, 1500 mAh, plugged into the board's JST-PH connector through an extension lead.
 - **Power switch:** a mini round rocker switch, ON-OFF, single pole, rated 250 V / 3 A, that snaps into a 15 mm round hole ([rasel.cz 056-151](https://www.rasel.cz/kolebkovy-vypinac-0-1-250v-3a-mini-p17388/)), in series with the battery's positive lead. It carries at most 4.2 V and the board's and the charger's current.
 - **Battery monitoring:** optional. A 100 kΩ / 100 kΩ divider from the switched battery line to GPIO35. The firmware must work without it.
-- **Construction:** wires soldered point to point, with no carrier board.
-- **Enclosure:** a 120 × 80 × 50 mm IP65 PS/ABS box ([dratek.cz 1442](https://dratek.cz/arduino-platforma/1442-plastova-prumyslova-krabicka-ip65.html)) for the first prototype, with a USB-C panel-mount extension for charging and flashing. A 3D-printed enclosure with a USB-C slot follows later.
-- **Left and right units:** there is one build. The sensor looks out through the lid, the LEDs and the buzzer sit on the end wall facing the approaching car, and the switch and USB-C sit on the opposite end wall. A unit for the right-hand wall is a left-hand unit mounted upside down. Which side a unit is on is a software setting, not a hardware variant.
+- **Construction:** no carrier board. The board and the sensor take Dupont plugs on pin headers, and the other parts are wired point to point.
+- **Enclosure:** a 3D-printed enclosure, 39 × 166 × 29.5 mm, held on the passage wall by magnets, with the board's USB-C port flush in its bottom wall ([ADR 0012](0012-3d-printed-enclosure.md)). The first unit was built in a 120 × 80 × 50 mm IP65 PS/ABS box ([dratek.cz 1442](https://dratek.cz/arduino-platforma/1442-plastova-prumyslova-krabicka-ip65.html)) with a USB-C panel-mount extension.
+- **Left and right units:** there is one build. The sensor, the switch, the LEDs and the buzzer are all on the enclosure's front, which faces the passage, so the same unit fits either wall the right way up. Which side a unit is on is a software setting, not a hardware variant.
 
 The pin assignments, wiring and assembly steps are in [device/prototype-assembly.md](../../device/prototype-assembly.md).
 

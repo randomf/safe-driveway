@@ -69,6 +69,11 @@ test *args:
 stubs:
     @uv run python -m host.stubs
 
+# Check that the parts fit in the 3D-printed enclosure and write its print files and pictures
+[no-exit-message]
+enclosure:
+    @uv run --group cad python -m enclosure
+
 # Check code style without changing anything
 [no-exit-message]
 lint:

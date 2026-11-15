@@ -1,6 +1,6 @@
 # Remote device
 
-This folder holds everything needed to build the remote device that is installed at the passage: how to wire and assemble it, its firmware, and the tools to flash and test it from a computer.
+This folder holds everything needed to build the remote device that is installed at the passage: how to wire and assemble it, its 3D-printed enclosure, its firmware, and the tools to flash and test it from a computer.
 
 | Path | What it is |
 |---|---|
@@ -11,7 +11,8 @@ This folder holds everything needed to build the remote device that is installed
 | [board/](board/) | Code that runs on the board, in MicroPython: the firmware in [board/firmware/](board/firmware/), which implements the BLE protocol in [doc/ble-protocol.md](../doc/ble-protocol.md), the bring-up checks, and in [board/lib/](board/lib/) libraries such as the VL53L1X sensor driver |
 | [tests/](tests/) | The tests of the firmware's pure modules, which run on the computer |
 | [micropython.toml](micropython.toml) | The MicroPython release that every unit runs |
-| `pyproject.toml`, `uv.lock`, `.python-version` | The Python environment for the code in `host/` |
+| [enclosure/](enclosure/) | The 3D-printed enclosure: its model, the files to print, pictures of it, and how to print it and fit the parts into it |
+| `pyproject.toml`, `uv.lock`, `.python-version` | The Python environment for the code in `host/` and the enclosure's model |
 
 Why the tools were chosen is recorded in [ADR 0003](../doc/adr/0003-device-development-toolchain.md).
 
@@ -69,6 +70,7 @@ Run the tasks from the `device/` folder or any folder below it. `just` on its ow
 | `just monitor` | Shows what the firmware prints over USB, until Ctrl-C, without stopping it. `--reset` first restarts the board as if it were switched on |
 | `just ble` | Acts as the phone over this computer's Bluetooth: `scan`, `watch`, `setup`, `identify`, `unlock`, `set-pin`, `forget`. See [firmware.md](firmware.md#testing-without-the-app) |
 | `just stubs` | Installs the MicroPython type stubs that editors use for the code in `board/` |
+| `just enclosure` | Checks that the parts fit in the 3D-printed enclosure and writes its print files and the pictures in its README, see [enclosure/README.md](enclosure/README.md#changing-the-model). The first run installs build123d and matplotlib, about 800 MB |
 | `just test` | Runs the tests of the firmware's pure modules on this computer, with pytest |
 | `just lint` | Checks the code with ruff, without changing anything |
 | `just fmt` | Formats the code and fixes what ruff can fix by itself |
@@ -93,7 +95,7 @@ Bring-up test on /dev/ttyUSB0
 
 ✓ board    MicroPython 1.29.0 on Generic ESP32 module with ESP32, 160 MHz, ID 08:ad:0a:5b:9f:b8
 ✓ sensor   VL53L1X at 0x29, model ID 0xeacc, XSHUT switches it off and on
-  leds     Watch the LEDs on wall A.
+  leds     Watch the LEDs on the front.
   Is the green LED on and the red LED off? [y/n] y
   …
 ```

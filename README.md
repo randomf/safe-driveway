@@ -32,9 +32,16 @@ The first prototype of the remote device is built from off-the-shelf parts:
 - **Li-Po battery 803450**, 3.7 V, 1500 mAh
 - **Mini round rocker switch**, ON-OFF, for a 15 mm hole, used as the power switch
 - **Green and red 5 mm LED** for visual status
-- **IP65 plastic box**, 120 × 80 × 50 mm, to house the electronics at the passage. A 3D-printed enclosure will follow.
+- **3D-printed enclosure**, 39 × 166 × 29.5 mm, held on a steel wall or gate by three magnets, with the sensor, the switch, the LEDs and the buzzer on its front ([device/enclosure/](device/enclosure/README.md))
 
-The device talks to the phone over Bluetooth Low Energy, using the protocol in [doc/ble-protocol.md](doc/ble-protocol.md). Its firmware, in MicroPython, implements that protocol, and signals the gap and its own state with the LEDs and the buzzer ([device/firmware.md](device/firmware.md)). [device/prototype-assembly.md](device/prototype-assembly.md) describes how to wire and assemble a unit, [device/README.md](device/README.md) how to set up a computer to flash, install and test it, and [doc/adr/](doc/adr/) records the decisions behind the hardware, the communication method and its protocol, the device's toolchain and its firmware, the app platform, the app's toolchain, its screens, and its connections, storage and sounds.
+The device talks to the phone over Bluetooth Low Energy, using the protocol in [doc/ble-protocol.md](doc/ble-protocol.md). Its firmware, in MicroPython, implements that protocol, and signals the gap and its own state with the LEDs and the buzzer ([device/firmware.md](device/firmware.md)). [device/prototype-assembly.md](device/prototype-assembly.md) describes how to wire and assemble a unit, [device/README.md](device/README.md) how to set up a computer to flash, install and test it, and [doc/adr/](doc/adr/) records the decisions behind the hardware, the communication method and its protocol, the device's toolchain, its firmware and its enclosure, the app platform, the app's toolchain, its screens, and its connections, storage and sounds.
+
+<p>
+  <img src="device/enclosure/pictures/front.png" width="260" alt="The unit's enclosure from the front: a tall, narrow box with, from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes">
+  <img src="device/enclosure/pictures/section.png" width="230" alt="A section through the enclosure, seen from the side with the front on the left: the laser sensor, the power switch, the LEDs, the buzzer with the battery behind it, and the ESP32 board at the bottom with its USB-C port. The box is 29.5 mm deep and 166 mm tall">
+</p>
+
+*The unit's 3D-printed enclosure from the front, and in section with the parts inside it, drawn from its model.*
 
 ## Mobile app
 

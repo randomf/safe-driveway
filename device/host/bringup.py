@@ -116,7 +116,7 @@ def check_distance(unit: Unit) -> Result:
         return ok("the readings follow a moving target")
     return failed(
         "The readings didn't follow the target.",
-        "Check that nothing covers the sensor chip: its protective film, glue, or the lid.",
+        "Check that nothing covers the sensor chip: its protective film, glue, or the front.",
     )
 
 
@@ -244,7 +244,7 @@ CHECKS: dict[str, tuple[Callable[[Unit], Result], str, str]] = {
     "sensor": (check_sensor, "laser-sensor", ""),
     "distance": (check_distance, "distance-readings", "Live readings from the sensor."),
     "view": (check_view, "clear-view", "Nothing in the sensor's field of view."),
-    "leds": (check_leds, "leds", "Watch the LEDs on wall A."),
+    "leds": (check_leds, "leds", "Watch the LEDs on the front."),
     "buzzer": (check_buzzer, "buzzer", "Listen to the buzzer."),
     "battery": (check_battery, "battery-voltage-optional", ""),
 }

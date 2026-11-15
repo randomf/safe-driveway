@@ -1,6 +1,6 @@
 # Prototype unit: wiring and assembly
 
-This document describes how to wire and assemble one unit of the first Safe Driveway prototype. Why these parts were chosen is recorded in [ADR 0001](../doc/adr/0001-prototype-hardware.md), and the choice of Bluetooth Low Energy in [ADR 0002](../doc/adr/0002-ble-communication.md).
+This document describes how to wire and assemble one unit of the first Safe Driveway prototype. Why these parts were chosen is recorded in [ADR 0001](../doc/adr/0001-prototype-hardware.md), and the choice of Bluetooth Low Energy in [ADR 0002](../doc/adr/0002-ble-communication.md). The unit goes into the 3D-printed enclosure in [enclosure/](enclosure/README.md), see [Enclosure](#enclosure).
 
 This document covers hardware only. The distance thresholds are set per passage from the app, and when the unit measures and signals is set by the protocol in [doc/ble-protocol.md](../doc/ble-protocol.md). The blink and beep patterns are defined by the firmware, see [firmware.md](firmware.md#lights-and-sounds). How to set up a computer to flash and test a unit is in [README.md](README.md).
 
@@ -20,31 +20,33 @@ This document covers hardware only. The distance thresholds are set per passage 
 
 | Part | Qty | Notes |
 |---|---|---|
-| ESP32 development board with Li-Po charger and USB-C | 1 | [dratek.cz 232739](https://dratek.cz/arduino-platforma/232739-vyvojova-deska-esp32-s-bms-pro-lipol-baterii-wi-fi-bluetooth-micropython-usb-c.html). A WEMOS LOLIN32 Lite clone: CH340, TP4054-class charger, JST-PH 2 mm battery socket, 51 × 26 mm |
+| ESP32 development board with Li-Po charger and USB-C | 1 | [dratek.cz 232739](https://dratek.cz/arduino-platforma/232739-vyvojova-deska-esp32-s-bms-pro-lipol-baterii-wi-fi-bluetooth-micropython-usb-c.html). A WEMOS LOLIN32 Lite clone: CH340, TP4054-class charger, JST-PH 2 mm battery socket, 51 × 26 mm. Its two 2.5 mm mounting holes are drilled out to 3.2 mm for the enclosure |
 | VL53L1X laser time-of-flight module | 1 | Any breakout with VIN, GND, SCL, SDA, XSHUT and GPIO1 pins and an onboard regulator works. VL53L0X modules look the same, so check the chip with `just bringup sensor`. See [ADR 0004](../doc/adr/0004-vl53l1x-distance-sensor.md) |
 | YL-44 active buzzer module | 1 | [dratek.cz 849](https://dratek.cz/arduino-platforma/849-eses-akusticky-bzucak-pro-jednodeskove-pocitace.html). Pins VCC, I/O, GND |
 | Li-Po battery 803450, 3.7 V, 1500 mAh | 1 | With a JST-PH 2.0 plug and a built-in protection circuit |
 | Mini round rocker switch, ON-OFF, 15 mm hole | 1 | [rasel.cz 056-151](https://www.rasel.cz/kolebkovy-vypinac-0-1-250v-3a-mini-p17388/). Single pole, 250 V / 3 A, two solder tabs, no light. Snaps into a 15 mm round hole |
-| 5 mm LED, green | 1 | |
-| 5 mm LED, red | 1 | |
+| 5 mm LED, green, diffused | 1 | Diffused, so that it can be seen from the side |
+| 5 mm LED, red, diffused | 1 | |
 | Resistor 220 Ω, ¼ W | 2 | One per LED |
-| 5 mm LED bezel or panel holder | 2 | |
-| JST-PH 2.0 two-pin extension lead, 10–20 cm | 1 | Plug on one end, socket on the other. The switch is spliced into it so the battery leads are never cut |
-| USB-C panel-mount extension, 20–30 cm | 1 | Male plug to panel-mount female socket. Must carry the USB 2.0 data lines, not just power, or firmware can't be flashed through it |
-| IP65 plastic box, 120 × 80 × 50 mm | 1 | [dratek.cz 1442](https://dratek.cz/arduino-platforma/1442-plastova-prumyslova-krabicka-ip65.html) |
+| JST-PH 2.0 two-pin extension lead, 10–20 cm | 1 | Plug on one end, socket on the other. The battery plugs into its socket, and the switch is spliced into it so the battery leads are never cut. Its plug is cut off, and its wires soldered to the back of the board's battery socket |
+| Pin headers, 2.54 mm, straight | | For the board and the sensor, if they came without them |
+| Dupont jumper wires, female, 2.54 mm | | For the pins of the board and the sensor |
+| 3D-printed enclosure | 1 | A tub and a back plate, with three magnets, four heat-set inserts and six M3 screws. See [enclosure/README.md](enclosure/README.md#hardware) |
 | Stranded hook-up wire, 24–26 AWG, several colours | | Silicone insulation is easiest to route |
 | Heat-shrink tubing, assorted | | |
-| Double-sided foam tape, hot glue, M2 and M3 screws | | For fixing the board, battery, sensor and buzzer |
+| Double-sided foam tape, hot glue | | For the battery, the LEDs and strain relief |
 | *Optional:* resistor 100 kΩ | 2 | Battery divider |
 | *Optional:* ceramic capacitor 100 nF | 1 | Battery divider |
 
 ## Tools
 
-- Soldering iron and solder
+- Soldering iron and solder. It also sets the enclosure's inserts and melts its pins
 - Multimeter with continuity test
 - Wire stripper and side cutters
 - Heat gun or lighter for heat-shrink
-- Drill with 3 mm and 8 mm bits, a step drill up to 15 mm, and small files
+- Drill with a 3.2 mm bit, for the board's mounting holes, and small files
+- Flush cutters, to trim the pins' soldered ends
+- A 3D printer, or a printing service, for the enclosure
 - Hot glue gun
 - Computer with a USB cable that carries data, set up as described in [README.md](README.md#setup), for flashing and testing the board
 
@@ -89,6 +91,7 @@ The switch is spliced into the red wire of the JST-PH extension lead, between th
 ```
 
 - The switch has two terminals, and either one can take the battery side. Call the other one the board-side terminal: the battery divider connects there.
+- The board's battery socket faces the enclosure's bottom wall, where no plug fits. The lead's plug is therefore cut off, and its wires are soldered to the back of the board's socket.
 - The switch has no light, so the unit has no power light. While the firmware isn't running, only the rocker's position shows whether the unit is on.
 
 ### Battery divider (optional)
@@ -107,18 +110,18 @@ Pin 35 sees half the battery voltage: 1.5–2.1 V for a 3.0–4.2 V cell. That i
 
 ### Signal wiring
 
-Every signal wire runs straight from a board pin to its part. The board has only one `3V` pin and one `GND` pin, so wires that share them are joined in insulated solder splices instead of being stacked on the pin:
+Every signal wire runs straight from a board pin to its part. At the board and the sensor, wires end in Dupont plugs on their pin headers; at the other parts, they are soldered. The board has only one `3V` pin and one `GND` pin, so wires that share them are joined in insulated solder splices instead of being stacked on the pin:
 
 - **S1** (near the board): board `3V`, VL53L1X `VIN`, YL-44 `VCC`.
-- **S2** (near the board): board `GND`, VL53L1X `GND`, the wall-A ground lead, and the battery divider's ground (optional).
-- **S3** (at wall A): the wall-A ground lead, YL-44 `GND`, green LED cathode, red LED cathode.
+- **S2** (near the board): board `GND`, VL53L1X `GND`, the front ground lead, and the battery divider's ground (optional).
+- **S3** (behind the LEDs): the front ground lead, YL-44 `GND`, green LED cathode, red LED cathode.
 
 ```
  board pin                                          part
  3V   ──[S1]──┬───────────────────────────────────►  VL53L1X VIN
               └───────────────────────────────────►  YL-44 VCC
  GND  ──[S2]──┬───────────────────────────────────►  VL53L1X GND
-              ├── wall-A ground lead ──[S3]──┬────►  YL-44 GND
+              ├── front ground lead ───[S3]──┬────►  YL-44 GND
               │                              ├────►  green LED cathode
               │                              └────►  red LED cathode
               └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ►  divider ground (optional)
@@ -156,53 +159,24 @@ Notes:
 
 ## Enclosure
 
-### Face layout
+The unit goes into a 3D-printed enclosure, 39 × 166 × 29.5 mm, which stands upright on the passage wall or gate, held by three magnets in its back. [enclosure/README.md](enclosure/README.md) describes it, how to print it and how the parts go into it, and [ADR 0012](../doc/adr/0012-3d-printed-enclosure.md) why it is built this way.
 
-The same build serves both sides of the passage. The box is mounted with its base against the passage wall and its lid facing the car:
+Everything the driver sees is on the front, which faces the passage: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes. The board's USB-C port is flush in the bottom wall.
 
-| Face | Size (outside) | What goes there |
-|---|---|---|
-| Lid | 120 × 80 mm | Laser sensor aperture, centred |
-| End wall A | 80 × 50 mm | Green and red LEDs, buzzer sound holes. Faces the approaching car |
-| End wall B | 80 × 50 mm | Power switch, USB-C panel socket |
-| Long walls | 120 × 50 mm | Nothing |
-| Base | 120 × 80 mm | Mounted against the passage wall |
+<p>
+  <img src="enclosure/pictures/front.png" width="300" alt="The enclosure from the front: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes">
+  <img src="enclosure/pictures/inside.png" width="280" alt="The inside from the back, with the back plate off: the laser sensor at the top, the power switch, the red and green LEDs, the buzzer, and the ESP32 board at the bottom">
+</p>
 
-View from the passage, looking at the lid of a unit on the left-hand wall:
+*The enclosure from the front, and the inside from the back with the back plate off. The battery sits on the back plate, behind the LEDs and the buzzer.*
 
-```
-              long wall: keep empty
-         ┌────────────────────────────────────┐
-  wall A │                                    │ wall B
-  LEDs   │                                    │ switch
-  buzzer │            lid   ( ◎ )  laser      │ USB-C
-         │                                    │
-         └────────────────────────────────────┘
-              long wall: keep empty
+A unit for the right-hand wall is the same as one for the left, the right way up. Which side a unit is on is set in software, not in hardware.
 
-   ◄── car approaches from this side
-```
+Inside, the enclosure is laid out for these:
 
-A unit for the right-hand wall is the same unit turned upside down. Wall A still faces the approaching car and the lid still faces the passage. The long walls are kept empty so that this works. On both sides the green LED is nearer the passage wall and the red LED nearer the passage. Which side a unit is on is set in software, not in hardware.
-
-### Openings in the standard box
-
-The seller lists only the outside dimensions, so check every position against the actual box. Keep holes at least 12 mm from the box edges to clear the lid screw bosses and the gasket.
-
-- **Lid, sensor aperture:** an 8 mm round hole in the centre of the lid. Mount the VL53L1X module on the inside of the lid with its sensor chip (the small black package with two windows) centred in the hole and as close to the lid as possible. Fix it with M2 screws through the module's holes, or with hot glue on the module's edges. Keep glue off the chip, and peel off the thin protective film if there is one over the chip. The aperture must not cut into the sensor's 27° field of view, and nothing shiny may sit inside that cone.
-- **Wall A, LEDs:** two holes sized for your bezels (typically 6–8 mm), halfway between the two long walls and about 15 mm apart along the depth. The green LED goes nearer the base, the red one nearer the lid.
-- **Wall A, buzzer:** three or four 3 mm sound holes. Fix the YL-44 behind them with its M3 hole, or with hot glue, so the buzzer faces the holes as closely as possible.
-- **Wall B, switch:** a 15 mm round hole. The switch is pushed in from outside and held by the spring clips on its sides, so don't make the hole oversize. Keep the space behind it clear for its body and solder tabs.
-- **Wall B, USB-C socket:** cut to the template of your panel-mount extension (usually a rectangular slot plus two M3 screw holes). The extension's plug goes into the board inside the box.
-- **Base, mounting:** use the box's own mounting holes if it has them. Otherwise drill two holes in the base, clear of the electronics.
-
-### Inside the box
-
-- **Battery:** fix it flat on the base with double-sided foam tape, away from the switch terminals and any sharp edges.
-- **Board:** fix it to the base with foam tape, with its USB-C end toward wall B.
-- **Antenna:** the board's PCB antenna (the zig-zag copper trace at the end opposite the USB-C port) must stay at least 10 mm from the battery and the wiring, with nothing metal over it.
-- **Sensor wires:** leave about 15 cm of slack so the lid can be opened without pulling on the joints.
-- **Strain relief:** secure the wires near the board with a dab of hot glue or a cable tie, so no solder joint carries the load.
+- **Sensor:** the chip sits right behind the aperture. Peel off its protective film, if there is one, and keep glue off it. The aperture must not cut into the sensor's 27° field of view, and nothing shiny may sit inside that cone.
+- **Antenna:** the board's PCB antenna, the zig-zag copper trace at the end opposite the USB-C port, must stay at least 10 mm from the battery and the wiring, with nothing metal over it.
+- **Strain relief:** secure the wires near their solder joints with a dab of hot glue, so no joint carries the load.
 
 ## Assembly steps
 
@@ -221,44 +195,48 @@ JST-PH plugs are not wired the same way by every seller. A reversed battery can 
 
 1. Find the `+` and `−` marks next to the board's battery socket. If there are none, use the continuity test: the socket pin that connects to the board's `GND` pin is `−`.
 2. With the multimeter, find which contact of the battery plug is `+` (red probe on it gives a positive reading).
-3. Check the extension lead the same way, end to end.
-4. If the polarity doesn't match, move the crimp contacts in the extension lead's housing: lift the small latch with a needle and swap them. Never modify the battery's plug.
+3. Plug the battery into the extension lead, and check that the lead's red wire carries `+`.
+4. If it doesn't, move the crimp contacts in the extension lead's socket: lift the small latch with a needle and swap them. Never modify the battery's plug.
 
 ### 3. Build the power harness
 
 1. Check the switch with the continuity test: its two terminals connect when the rocker is pressed to `I` and disconnect at `O`.
-2. Cut the red wire of the extension lead. Solder the battery-side end to one terminal of the switch and the board-side end to the other. The black wire stays continuous.
+2. Cut the plug off the extension lead. Cut its red wire, and solder the battery-side end to one terminal of the switch and the board-side end to the other. The black wire stays continuous.
 3. Insulate both joints with heat-shrink.
 4. Test it before connecting the board: plug in the battery. With the switch at `O`, the board end of the lead reads 0 V. At `I`, it reads the battery voltage (3.0–4.2 V).
 
-### 4. Prepare the box
+### 4. Print and prepare the enclosure
 
-Mark and drill all openings as described in [Openings in the standard box](#openings-in-the-standard-box). Deburr the holes.
+Print the tub and the back plate, set the inserts, glue in the magnets and drill out the board's mounting holes, as [enclosure/README.md](enclosure/README.md#printing) describes.
 
-### 5. Mount the panel parts
+### 5. Wire the front parts
 
-Feed the switch's wires through its hole from outside, then push the switch in until its clips catch. If the wall is too thick for the clips, fix the switch from inside with hot glue. Fit the LEDs in their bezels, the USB-C panel socket, the buzzer behind wall A and the sensor on the lid.
-
-### 6. Wire wall A
+Wire the parts on the front before fitting them: the buzzer's pins face the front once it is in.
 
 1. Solder a 220 Ω resistor to the anode leg of each LED.
-2. Join the two LED cathodes, the YL-44 `GND` and the wall-A ground lead in splice S3.
-3. Solder signal wires to the free ends of the resistors (green → pin `26`, red → pin `27`) and to the YL-44 `I/O` (→ pin `25`) and `VCC` (→ S1).
+2. Join the two LED cathodes, the YL-44 `GND` and the front ground lead in splice S3.
+3. Solder signal wires to the free ends of the resistors (green → pin `26`, red → pin `27`) and to the YL-44 `I/O` (→ pin `25`) and `VCC` (→ S1). Their other ends get Dupont plugs, or go into the splices near the board.
+4. Fit the pin header to the sensor, its plastic on the side away from the chip, and trim the soldered ends on the chip side to 1.5 mm.
+
+### 6. Fit the parts on the front
+
+Feed both ends of the power harness through the switch's hole from outside, then fit the switch, the LEDs, the buzzer and the sensor into the tub, as [enclosure/README.md](enclosure/README.md#fitting-the-parts) describes in its steps 1–4.
 
 ### 7. Wire the board
 
-1. Solder the wires straight into the board's holes. Don't fit the pin headers that come with the board.
-2. Make splices S1 and S2 close to the board, with one wire from each splice into the board's `3V` and `GND` holes.
-3. Wire the sensor: `VIN` → S1, `GND` → S2, `SCL` → `18`, `SDA` → `19`, `XSHUT` → `16`, `GPIO1` → `17`.
-4. Optional: build the battery divider. Solder the resistors and the capacitor in-line close to pin `35`, with the top of the divider wired to the switch's board-side terminal.
+1. Fit the pin headers to the board, their plastic on the component side, and trim the soldered ends to 1.5 mm, so that the board sits flat on its posts.
+2. Solder the extension lead's board end to the back of the board's battery socket: the switched red wire to `+`, black to `−`.
+3. Make splices S1 and S2 close to the board, with one Dupont wire from each splice onto the board's `3V` and `GND` pins.
+4. Wire the sensor with Dupont wires: `VIN` → S1, `GND` → S2, `SCL` → `18`, `SDA` → `19`, `XSHUT` → `16`, `GPIO1` → `17`.
+5. Optional: build the battery divider. Solder the resistors and the capacitor in-line close to the Dupont plug on pin `35`, with the top of the divider wired to the switch's board-side terminal.
 
-### 8. Fit everything into the box
+### 8. Fit the board and the battery
 
-Fix the board and the battery, route the wires, add strain relief and plug the USB-C extension into the board. See [Inside the box](#inside-the-box).
+Screw the board onto its posts, plug in the wires and stick the battery onto the back plate, as [enclosure/README.md](enclosure/README.md#fitting-the-parts) describes in its steps 5–7. Keep the wires away from the antenna, see [Enclosure](#enclosure), and add strain relief.
 
 ### 9. Run the bring-up tests
 
-Run `just bringup` and answer its questions, and let it save its notes for the firmware on the board. Then check power and charging by hand. See [Bring-up tests](#bring-up-tests). Close the lid only after every test passes.
+Run `just bringup` and answer its questions, and let it save its notes for the firmware on the board. Then check power and charging by hand. See [Bring-up tests](#bring-up-tests). Screw on the back plate only after every test passes.
 
 ### 10. Install the firmware
 
@@ -266,7 +244,7 @@ Run `just install`. The board restarts into the firmware: green and red light fo
 
 ## Bring-up tests
 
-Run them with the board connected over USB, through the panel socket. The battery doesn't have to be switched on, except for the battery voltage test. In the `device/` folder:
+Run them with the board connected over USB, through the port in the enclosure's bottom. The battery doesn't have to be switched on, except for the battery voltage test. In the `device/` folder:
 
 ```bash
 just bringup
@@ -296,7 +274,7 @@ The sensor answers at I2C address `0x29`, identifies itself as a VL53L1X (model 
 
 The run measures in short distance mode, about 20 times a second, and shows the distance on one line for 10 seconds while you move your hand in front of the sensor, between 5 and 50 cm. It then asks whether the readings followed your hand. A target nearer than 4 cm shows as "closer than 4 cm". Without a target in range, the line shows "no reading" and the sensor's reason.
 
-- **The readings don't change:** check that nothing covers the sensor chip: its protective film, glue, or the lid.
+- **The readings don't change:** check that nothing covers the sensor chip: its protective film, glue, or the front.
 
 To watch the readings for longer, for example while aiming a unit at the passage, run `just distance` and stop it with Ctrl-C. The driver is [board/lib/vl53l1x.py](board/lib/vl53l1x.py), see [ADR 0005](../doc/adr/0005-vl53l1x-driver.md).
 
@@ -304,7 +282,7 @@ To watch the readings for longer, for example while aiming a unit at the passage
 
 When asked, point the sensor at open space, with nothing within 1.5 m. The run takes 20 measurements and passes if none sees a target closer than 1 m, including one too close to measure.
 
-- **It sees something close:** something sits in the sensor's 27° field of view, such as the edge of the aperture, glue, a wire or the chip's protective film. See [Openings in the standard box](#openings-in-the-standard-box).
+- **It sees something close:** something sits in the sensor's 27° field of view, such as the edge of the aperture, glue, a wire or the chip's protective film. See [Enclosure](#enclosure).
 
 ### LEDs
 
@@ -344,6 +322,7 @@ These can't be tested over USB, so check them by hand:
 - **Charging only while switched on.** The switch disconnects the battery from the charger as well as from the board.
 - **No power light.** The switch isn't lit. The unit's own LEDs show its state only while the firmware runs.
 - **Battery life.** With the radio and the sensor running continuously, expect roughly 15–25 hours from a full charge. Charging from empty takes about 4–5 hours at the charger's 400 mA. Both are estimates; measure them and record the results here.
+- **Steel to hold on to.** The magnets hold only on steel. On masonry, glue or screw a steel plate or washers to the wall.
 - **Indoor use only.** The sensor aperture is open and the switch isn't waterproof, so the unit must stay out of rain.
 - **Sensor range.** In short distance mode, the VL53L1X reaches about 1.3 m, even in strong ambient light. Long distance mode reaches up to 3.6 m in the dark, but only about 0.7 m in strong light. Dark or glossy paint weakens the signal. Below 4 cm, the sensor still detects a target, but the distance isn't accurate.
 
@@ -356,16 +335,3 @@ The firmware in [board/firmware/](board/firmware/) follows these:
 - Read `17` (GPIO1) with the internal pull-up enabled. The firmware doesn't use it yet: it asks the sensor over I2C whether a measurement is ready.
 - Treat battery monitoring as optional and configurable, because units without the divider read nothing useful on pin `35`.
 - Store which side of the passage the unit is on as a setting. The hardware is the same for both sides.
-
-## Requirements for the 3D-printed enclosure
-
-The 3D-printed enclosure that replaces the standard box keeps the same face layout and adds:
-
-- **USB-C slot:** in the end wall with the switch, aligned with the board's USB-C port. The board sits in a cradle that holds it in place when a plug is pushed in. The slot must admit a typical USB-C plug overmould, about 13 × 7 mm. This replaces the panel-mount extension.
-- **Sensor:** the sensor chip flush behind an aperture of at least 8 mm, with the wall no thicker than 2 mm around the aperture and a matte inside surface. No window: adding one needs crosstalk calibration and a new decision.
-- **Battery pocket:** about 52 × 36 × 10 mm, with retention, at least 10 mm from the board's antenna.
-- **Antenna:** keep the area around it free of metal. Print in PLA, PETG or ASA, not in carbon-filled filament, which can block the radio.
-- **Switch:** a 15 mm round hole in a wall thin enough for the switch's spring clips to catch behind it.
-- **LEDs and buzzer:** holes for the LED bezels and the buzzer's sound holes, as in the standard box.
-- **Mounting:** holes or keyhole slots on the base.
-- **Symmetry:** no openings on the long walls, so one print serves both sides of the passage.
