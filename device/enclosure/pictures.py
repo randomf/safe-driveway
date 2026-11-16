@@ -5,6 +5,10 @@ triangles no longer than a few millimetres, those facing away from the eye are
 dropped, and the rest are painted from the farthest to the nearest, shaded by a light
 from over the viewer's shoulder. The labels point at positions taken from the model,
 so the pictures follow it when it changes.
+
+It draws the model's own, left-handed coordinates (see model.py), in which the screen's
+right is up × forward. The pictures therefore show the real enclosure, not its mirror
+image.
 """
 
 import functools
@@ -243,7 +247,9 @@ def halved(parts: Iterable[tuple[Part, Colour]]) -> tuple[tuple[Part, Colour], .
 
 def numbers(tub: Part) -> Picture:
     """The tops of the tubs for each unit number, side by side, seen from above."""
-    top = tub & Pos(-1, m.HEIGHT - 4, -1) * Box(m.WIDTH + 2, 10, m.DEPTH + 2, align=Align.MIN)
+    top = tub & Pos(-1, m.HEIGHT - 4, -1) * Box(
+        m.WIDTH + 2, m.HOOK_H + 6, m.DEPTH + 2, align=Align.MIN
+    )
     spacing = m.WIDTH + 10
     units = range(1, m.UNITS + 1)
     return Picture(
@@ -273,16 +279,20 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
     led_tip = m.LED_COLLAR_H + m.LED_FLANGE_T - m.LED_LENGTH
     led_legs = m.LED_COLLAR_H + m.LED_FLANGE_T + m.LED_LEGS
     usb = (m.BOARD_X + m.USB_X, m.BOARD_POST_H + m.BOARD_T + m.USB_H / 2)
-    sensor_x = cx - m.CHIP_FROM_LEFT + m.SENSOR_W / 2
+    plugs_y = m.SENSOR_Y - m.CHIP_FROM_BOTTOM + m.SENSOR_W - m.PIN_STRIP / 2
+    (green_x, green_y), (red_x, red_y) = m.LEDS
     board_middle = (m.BOARD_X + m.BOARD_W / 2, m.BOARD_L / 2)
     bx, by = m.buzzer_centre()
     battery_middle = m.BATTERY_Y + m.BATTERY_L / 2
-    middle_magnet = (m.WIDTH / 2, m.MAGNETS_Y[1], m.DEPTH)
+    upper_magnet = (m.WIDTH / 2, m.MAGNETS_Y[-1], m.DEPTH)
     # Where there are several, a label points at the one nearest to it and gives the count.
     # Seen from the back, the model's left is on the right of the picture.
     left_screw = m.CASE_SCREWS[1]
     dot_x, dot_z = m.dot_positions(PICTURED_UNIT)[m.DOT_GRID[0] - 1]  # front right
     corner_dot = (dot_x, m.HEIGHT + m.DOT_H, dot_z)
+    hook_top = m.HEIGHT + m.HOOK_HOLE_Y + m.HOOK_HOLE_D / 2 + 1.5
+    hook_front = (m.WIDTH / 2 + 3, hook_top, m.DEPTH - m.HOOK_T)
+    hook_back = (m.WIDTH / 2, hook_top, m.DEPTH)
     w, h, d = m.WIDTH, m.HEIGHT, m.DEPTH
     return (
         Picture(
@@ -292,10 +302,11 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
             labels=(
                 Label("Laser sensor aperture", (outside(cx, m.SENSOR_Y, front),)),
                 Label("Power switch", (outside(cx, m.SWITCH_Y, 0),)),
-                Label("Red LED", (outside(cx, m.LEDS_Y[1], led_tip),)),
-                Label("Green LED", (outside(cx, m.LEDS_Y[0], led_tip),)),
+                Label("Green LED", (outside(green_x, green_y, led_tip),)),
+                Label("Red LED", (outside(red_x, red_y, led_tip),)),
                 Label("Buzzer sound holes", (outside(bx, by, front),)),
                 Label("Dots for the unit's number", (corner_dot,)),
+                Label("Hook for hanging", (hook_front,)),
             ),
         ),
         Picture(
@@ -307,8 +318,9 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
                     f"{len(m.CASE_SCREWS)} countersunk M3 screws",
                     (outside(*m.CASE_SCREWS[2], m.INNER_D + m.PLATE),),
                 ),
-                Label(f"{len(m.MAGNETS_Y)} magnets, flush", (middle_magnet,)),
+                Label(f"{len(m.MAGNETS_Y)} magnets, flush", (upper_magnet,)),
                 Label("USB-C port", (outside(usb[0], -m.WALL, usb[1]),)),
+                Label("Hook for hanging from a nail", (hook_back,)),
             ),
         ),
         Picture(
@@ -321,10 +333,10 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
             labels=(
                 Label(
                     "Laser sensor, with its plugs",
-                    (outside(sensor_x, m.SENSOR_Y, m.CHIP_GAP + m.SENSOR_STACK),),
+                    (outside(cx, plugs_y, m.CHIP_GAP + m.SENSOR_STACK),),
                 ),
                 Label("Power switch", (outside(cx, m.SWITCH_Y, m.SWITCH_DEPTH),)),
-                Label("Red and green LEDs", tuple(outside(cx, y, led_legs) for y in m.LEDS_Y)),
+                Label("Green and red LEDs", tuple(outside(x, y, led_legs) for x, y in m.LEDS)),
                 Label("Buzzer", (outside(cx, by, m.BUZZER_TALL),)),
                 Label(
                     "ESP32 board, with its plugs",
@@ -342,12 +354,12 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
             forward=(-1, 0, 0),
             parts=halved(everything),
             labels=(
-                Label("Laser sensor", (outside(cx, m.SENSOR_Y, 8),)),
+                Label("Laser sensor", (outside(cx, m.SENSOR_Y, m.CHIP_GAP + m.CHIP_H + 1),)),
                 Label("Power switch", (outside(cx, m.SWITCH_Y, 10),)),
-                Label("Red and green LEDs", tuple(outside(cx, y, 0) for y in m.LEDS_Y)),
-                Label("Buzzer", (outside(cx, by, 5),)),
+                Label("Green LED, the red one beside it", (outside(green_x, green_y, led_tip),)),
+                Label("Buzzer", (outside(cx, by, m.BUZZER_TALL - m.BUZZER_PCB_T / 2),)),
                 Label("Battery", (outside(cx, battery_middle, m.INNER_D - m.BATTERY_T / 2),)),
-                Label("Magnets", (middle_magnet,)),
+                Label("Magnets", (upper_magnet,)),
                 Label("ESP32 board, with its plugs", (outside(cx, board_middle[1], 14),)),
                 Label("USB-C port", (outside(usb[0], -m.WALL / 2, usb[1]),)),
             ),
@@ -369,10 +381,10 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
                     ),
                 ),
                 Label("Switch hole", (outside(cx, m.SWITCH_Y - m.SWITCH_HOLE_D / 2, 0),)),
-                Label("LED collars", tuple(outside(cx - 3.3, y, m.LED_COLLAR_H) for y in m.LEDS_Y)),
+                Label("LED collars", tuple(outside(x, y - 3.3, m.LED_COLLAR_H) for x, y in m.LEDS)),
                 Label(
-                    "Post and pin for the buzzer",
-                    (outside(*m.buzzer_hole(), m.BUZZER_TALL + m.MELT),),
+                    "Post for the buzzer's screw",
+                    (outside(*m.buzzer_hole(), m.BUZZER_TALL - m.BUZZER_PCB_T),),
                 ),
                 Label("Step for the back plate", (outside(-m.WALL + m.LIP + 0.5, 80, m.INNER_D),)),
                 Label(

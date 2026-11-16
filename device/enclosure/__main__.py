@@ -24,12 +24,12 @@ def main() -> int:
 
     PRINT.mkdir(exist_ok=True)
     for number in range(1, model.UNITS + 1):
-        numbered = model.numbered_tub(tub, number)
+        numbered = model.real(model.numbered_tub(tub, number))
         export_stl(numbered, PRINT / f"tub-{number}.stl", tolerance=0.01, angular_tolerance=0.1)
-    export_stl(plate, PRINT / "back-plate.stl", tolerance=0.01, angular_tolerance=0.1)
+    export_stl(model.real(plate), PRINT / "back-plate.stl", tolerance=0.01, angular_tolerance=0.1)
     # A fixed timestamp, so that the file changes only when the model does.
     export_step(
-        Compound([tub, plate], label="enclosure"),
+        Compound([model.real(tub), model.real(plate)], label="enclosure"),
         PRINT / "enclosure.step",
         timestamp="2026-01-01T00:00:00",
     )

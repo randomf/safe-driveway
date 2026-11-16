@@ -20,18 +20,18 @@ This document covers hardware only. The distance thresholds are set per passage 
 
 | Part | Qty | Notes |
 |---|---|---|
-| ESP32 development board with Li-Po charger and USB-C | 1 | [dratek.cz 232739](https://dratek.cz/arduino-platforma/232739-vyvojova-deska-esp32-s-bms-pro-lipol-baterii-wi-fi-bluetooth-micropython-usb-c.html). A WEMOS LOLIN32 Lite clone: CH340, TP4054-class charger, JST-PH 2 mm battery socket, 51 × 26 mm. Its two 2.5 mm mounting holes are drilled out to 3.2 mm for the enclosure |
+| ESP32 development board with Li-Po charger and USB-C | 1 | [dratek.cz 232739](https://dratek.cz/arduino-platforma/232739-vyvojova-deska-esp32-s-bms-pro-lipol-baterii-wi-fi-bluetooth-micropython-usb-c.html). A WEMOS LOLIN32 Lite clone: CH340, TP4054-class charger, JST-PH 2 mm battery socket, 51 × 26 mm. Its two 2.5 mm mounting holes take M2 self-tapping screws in the enclosure |
 | VL53L1X laser time-of-flight module | 1 | Any breakout with VIN, GND, SCL, SDA, XSHUT and GPIO1 pins and an onboard regulator works. VL53L0X modules look the same, so check the chip with `just bringup sensor`. See [ADR 0004](../doc/adr/0004-vl53l1x-distance-sensor.md) |
 | YL-44 active buzzer module | 1 | [dratek.cz 849](https://dratek.cz/arduino-platforma/849-eses-akusticky-bzucak-pro-jednodeskove-pocitace.html). Pins VCC, I/O, GND |
 | Li-Po battery 803450, 3.7 V, 1500 mAh | 1 | With a JST-PH 2.0 plug and a built-in protection circuit |
-| Mini round rocker switch, ON-OFF, 15 mm hole | 1 | [rasel.cz 056-151](https://www.rasel.cz/kolebkovy-vypinac-0-1-250v-3a-mini-p17388/). Single pole, 250 V / 3 A, two solder tabs, no light. Snaps into a 15 mm round hole |
+| Mini round rocker switch, ON-OFF, 15 mm hole | 1 | [rasel.cz 056-151](https://www.rasel.cz/kolebkovy-vypinac-0-1-250v-3a-mini-p17388/). Single pole, 250 V / 3 A, two solder tabs, no light. Snaps into a 15 mm round hole, and is 16 mm deep behind it |
 | 5 mm LED, green, diffused | 1 | Diffused, so that it can be seen from the side |
 | 5 mm LED, red, diffused | 1 | |
 | Resistor 220 Ω, ¼ W | 2 | One per LED |
 | JST-PH 2.0 two-pin extension lead, 10–20 cm | 1 | Plug on one end, socket on the other. The battery plugs into its socket, and the switch is spliced into it so the battery leads are never cut. Its plug is cut off, and its wires soldered to the back of the board's battery socket |
 | Pin headers, 2.54 mm, straight | | For the board and the sensor, if they came without them |
 | Dupont jumper wires, female, 2.54 mm | | For the pins of the board and the sensor |
-| 3D-printed enclosure | 1 | The tub with the unit's number, and a back plate, with three magnets, four heat-set inserts and six M3 screws. See [enclosure/README.md](enclosure/README.md#hardware) |
+| 3D-printed enclosure | 1 | The tub with the unit's number, and a back plate, with two magnets, four heat-set inserts, five M3 screws and two M2 self-tapping screws. See [enclosure/README.md](enclosure/README.md#hardware) |
 | Stranded hook-up wire, 24–26 AWG, several colours | | Silicone insulation is easiest to route |
 | Heat-shrink tubing, assorted | | |
 | Double-sided foam tape, hot glue | | For the battery, the LEDs and strain relief |
@@ -44,7 +44,7 @@ This document covers hardware only. The distance thresholds are set per passage 
 - Multimeter with continuity test
 - Wire stripper and side cutters
 - Heat gun or lighter for heat-shrink
-- Drill with a 3.2 mm bit, for the board's mounting holes, and small files
+- Small files, for tidying printed holes
 - Flush cutters, to trim the pins' soldered ends
 - A 3D printer, or a printing service, for the enclosure
 - Hot glue gun
@@ -114,7 +114,7 @@ Every signal wire runs straight from a board pin to its part. At the board and t
 
 - **S1** (near the board): board `3V`, VL53L1X `VIN`, YL-44 `VCC`.
 - **S2** (near the board): board `GND`, VL53L1X `GND`, the front ground lead, and the battery divider's ground (optional).
-- **S3** (behind the LEDs): the front ground lead, YL-44 `GND`, green LED cathode, red LED cathode.
+- **S3** (behind the switch, between the LEDs): the front ground lead, YL-44 `GND`, green LED cathode, red LED cathode.
 
 ```
  board pin                                          part
@@ -159,16 +159,16 @@ Notes:
 
 ## Enclosure
 
-The unit goes into a 3D-printed enclosure, 39 × 166 × 29.5 mm, which stands upright on the passage wall or gate, held by three magnets in its back. [enclosure/README.md](enclosure/README.md) describes it, how to print it and how the parts go into it, and [ADR 0012](../doc/adr/0012-3d-printed-enclosure.md) why it is built this way.
+The unit goes into a 3D-printed enclosure, 39 × 125 × 29.5 mm, which stands upright on the passage wall or gate, held by two magnets in its back, or hung from a nail or a screw by a hook on top. [enclosure/README.md](enclosure/README.md) describes it, how to print it and how the parts go into it, and [ADR 0012](../doc/adr/0012-3d-printed-enclosure.md) why it is built this way.
 
-Everything the driver sees is on the front, which faces the passage: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes. The board's USB-C port is flush in the bottom wall. The top carries 1 to 8 dots, the unit's number, so that the units at a passage can be told apart: each gets the tub with its own number.
+Everything the driver sees is on the front, which faces the passage: from the top, the laser sensor's aperture, the power switch between the green LED on its left and the red one on its right, and the buzzer's sound holes, to the right of the middle. The board's USB-C port is flush in the bottom wall. The top carries 1 to 8 dots, the unit's number, so that the units at a passage can be told apart: each gets the tub with its own number.
 
 <p>
-  <img src="enclosure/pictures/front.png" width="300" alt="The enclosure from the front: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes, with the dots for unit 8 on top">
-  <img src="enclosure/pictures/inside.png" width="280" alt="The inside from the back, with the back plate off: the laser sensor at the top, the power switch, the red and green LEDs, the buzzer, and the ESP32 board at the bottom">
+  <img src="enclosure/pictures/front.png" width="300" alt="The enclosure from the front: from the top, the laser sensor's aperture, the power switch between the green and the red LED, and the buzzer's sound holes to the right, with the dots for unit 8 and the hook for hanging on top">
+  <img src="enclosure/pictures/inside.png" width="280" alt="The inside from the back, with the back plate off: the laser sensor lying across the top, the power switch between the LEDs, the buzzer lying across, and the ESP32 board at the bottom">
 </p>
 
-*The enclosure from the front, and the inside from the back with the back plate off. The battery sits on the back plate, behind the LEDs and the buzzer.*
+*The enclosure from the front, and the inside from the back with the back plate off. The battery sits on the back plate, behind the buzzer, the switch and the LEDs, and the lower half of the sensor.*
 
 A unit for the right-hand wall is the same as one for the left, the right way up. Which side a unit is on is set in software, not in hardware.
 
@@ -207,7 +207,7 @@ JST-PH plugs are not wired the same way by every seller. A reversed battery can 
 
 ### 4. Print and prepare the enclosure
 
-Print the tub and the back plate, set the inserts, glue in the magnets and drill out the board's mounting holes, as [enclosure/README.md](enclosure/README.md#printing) describes.
+Print the tub and the back plate, set the inserts and glue in the magnets, as [enclosure/README.md](enclosure/README.md#printing) describes.
 
 ### 5. Wire the front parts
 
@@ -322,7 +322,7 @@ These can't be tested over USB, so check them by hand:
 - **Charging only while switched on.** The switch disconnects the battery from the charger as well as from the board.
 - **No power light.** The switch isn't lit. The unit's own LEDs show its state only while the firmware runs.
 - **Battery life.** With the radio and the sensor running continuously, expect roughly 15–25 hours from a full charge. Charging from empty takes about 4–5 hours at the charger's 400 mA. Both are estimates; measure them and record the results here.
-- **Steel to hold on to.** The magnets hold only on steel. On masonry, glue or screw a steel plate or washers to the wall.
+- **Steel to hold on to.** The magnets hold only on steel. On masonry, hang the unit from a nail or a screw by its hook, or glue or screw a steel plate or washers to the wall.
 - **Indoor use only.** The sensor aperture is open and the switch isn't waterproof, so the unit must stay out of rain.
 - **Sensor range.** In short distance mode, the VL53L1X reaches about 1.3 m, even in strong ambient light. Long distance mode reaches up to 3.6 m in the dark, but only about 0.7 m in strong light. Dark or glossy paint weakens the signal. Below 4 cm, the sensor still detects a target, but the distance isn't accurate.
 
