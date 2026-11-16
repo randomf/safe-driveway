@@ -1,7 +1,7 @@
 [project]
 name = "safe-driveway-device"
 version = "0.1.0"
-description = "Host-side tools for flashing and testing the Safe Driveway remote device"
+description = "Host-side tools for flashing and testing the Safe Driveway remote device, and the model of its enclosure"
 requires-python = ">=3.12"
 dependencies = [
     "bleak>=3.0.2",
@@ -15,6 +15,10 @@ dependencies = [
 package = false
 
 [dependency-groups]
+cad = [
+    "build123d>=0.13.0",
+    "matplotlib>=3.11.2",
+]
 dev = [
     "pytest>=9.2.0",
     "ruff>=0.17.3",
