@@ -30,8 +30,9 @@ The enclosure is an upright box, 39 × 166 × 29.5 mm, printed as a front tub an
 - **Sensor and buzzer fixing:** printed pins through their holes, melted over.
 - **Closing:** the back plate sits in a step around the back of the tub and is held by four countersunk M3 screws in heat-set inserts. The heads are flush with the back.
 - **Mounting:** three 10 × 5 × 1 mm magnets glued flush into pockets in the back plate, at a sixth, a half and five sixths of its length. A wall that isn't steel gets a steel plate or washers glued or screwed to it.
+- **Unit numbers:** the tub comes in eight versions, one for each of the up to 8 units at a passage, with as many raised dots on top as the unit's number. The dots are 3 mm domes, 1 mm high, and fill a 4 × 2 grid from the front left, a row at a time, so that the units can be told apart by sight and by touch.
 - **Material:** dark, opaque PETG.
-- **Model:** written in build123d, in Python, in [device/enclosure/model.py](../../device/enclosure/model.py), and run with `just enclosure`. It models the parts the enclosure holds from their measured sizes and refuses to write the print files when one runs into the enclosure or another part, when the box gets deeper than 30 mm, or when the battery comes within 10 mm of the antenna. The same task draws the pictures of the enclosure in the docs from the model, with matplotlib, so that they follow it. build123d and matplotlib are in their own uv dependency group, `cad`, so that the other tasks and CI don't install them. The STL files for printing, a STEP file of both parts and the pictures are committed with the model.
+- **Model:** written in build123d, in Python, in [device/enclosure/model.py](../../device/enclosure/model.py), and run with `just enclosure`. It models the parts the enclosure holds from their measured sizes and refuses to write the print files when one runs into the enclosure or another part, when the box gets deeper than 30 mm, or when the battery comes within 10 mm of the antenna. The same task draws the pictures of the enclosure in the docs from the model, with matplotlib, so that they follow it. build123d and matplotlib are in their own uv dependency group, `cad`, so that the other tasks and CI don't install them. The STL files for printing, eight tubs and the back plate, a STEP file of the tub without dots and the back plate, and the pictures are committed with the model.
 
 ## Alternatives considered
 
@@ -46,6 +47,7 @@ The enclosure is an upright box, 39 × 166 × 29.5 mm, printed as a front tub an
 - **Keyhole slots for screws in the wall.** For walls that aren't steel, but they add holes and depth to the back plate; a steel plate on the wall does the same and leaves the unit removable.
 - **Printed pins for the board.** No drilling, but the board's 2.5 mm holes would need thin pins that hold less.
 - **Pictures taken by hand in a CAD viewer or a slicer.** Easier to make look good, but they fall behind the model unless someone remembers to retake them.
+- **One tub for every unit, told apart only in the app.** Fewer files to print from, but nothing on a unit would show which one it is.
 - **OpenSCAD or FreeCAD.** OpenSCAD has weaker fillets and STEP export, and FreeCAD stores its models in binary files that git can't compare.
 
 ## Consequences
@@ -60,4 +62,5 @@ The enclosure is an upright box, 39 × 166 × 29.5 mm, printed as a front tub an
 - Dupont plugs can work loose on a gate that swings.
 - The sensor and the buzzer come out only by cutting their melted pins, and a new tub is then needed to fix them again.
 - The model's sizes come from measurements of one set of parts. A different board or module needs its sizes changed in the model, and the fit check then shows what no longer fits.
+- The eight tubs' STL files, 1.3 to 2.1 MB each and 14 MB together, are committed, and are rewritten whenever the model changes.
 - The enclosure hasn't been printed yet; its holes may need adjusting after the first print.

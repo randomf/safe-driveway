@@ -30,6 +30,7 @@ from build123d import (
     Rectangle,
     RectangleRounded,
     Rot,
+    Sphere,
     extrude,
     fillet,
 )
@@ -129,6 +130,13 @@ SCREW_HOLE_D, COUNTERSINK_D = 3.4, 6.4
 MAGNET = (5.0, 10.0, 1.0)
 MAGNET_POCKET = (5.2, 10.2, 1.1)
 MAGNETS_Y = tuple(HEIGHT * k / 6 for k in (1, 3, 5))
+
+# Unit numbers: a tub for each of the up to 8 units at a passage, with as many raised
+# dots on top as its number. They fill a 4 × 2 grid from the front left, a row at a time.
+UNITS = 8
+DOT_D, DOT_H = 3.0, 1.0
+DOT_PITCH = 7.0
+DOT_GRID = (4, 2)  # across the width, and from the front back
 
 
 def inside(x: float, y: float, z: float = 0.0) -> Pos:
@@ -313,6 +321,37 @@ def back_plate() -> Part:
         for y in MAGNETS_Y
     ]
     return plate + union(ribs) - union([*screw_holes, *pockets])
+
+
+def dot_positions(number: int) -> tuple[tuple[float, float], ...]:
+    """Where the dots of the unit with this number sit on top, as (x, z) outside."""
+    columns, rows = DOT_GRID
+    if not 1 <= number <= columns * rows:
+        raise ValueError(f"A unit number is 1 to {columns * rows}, not {number}.")
+    return tuple(
+        (
+            WIDTH / 2 + (k % columns - (columns - 1) / 2) * DOT_PITCH,
+            DEPTH / 2 + (k // columns - (rows - 1) / 2) * DOT_PITCH,
+        )
+        for k in range(number)
+    )
+
+
+def dots(number: int) -> Part:
+    """The dots for a unit number: low domes standing out of the top."""
+    a, h = DOT_D / 2, DOT_H
+    r = (a * a + h * h) / (2 * h)  # of the sphere each dome is cut from
+    above = (Align.CENTER, Align.MIN, Align.CENTER)
+    return union(
+        Pos(x, HEIGHT + h - r, z) * Sphere(r)
+        & Pos(x, HEIGHT - 0.1, z) * Box(DOT_D + 1, h + 0.1, DOT_D + 1, align=above)
+        for x, z in dot_positions(number)
+    )
+
+
+def numbered_tub(tub_: Part, number: int) -> Part:
+    """The tub for the unit with this number, 1 to 8."""
+    return tub_ + dots(number)
 
 
 # The parts the enclosure holds, as their measured outlines.

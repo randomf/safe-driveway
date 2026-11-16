@@ -1,9 +1,9 @@
 # 3D-printed enclosure
 
-The unit's enclosure is a front tub and a back plate, 39 × 166 × 29.5 mm (width × height × depth), printed in two parts and screwed together. It stands upright on the passage wall or gate, held by three magnets in its back. Everything the driver sees and the switch are on the front, and the USB-C port is in the bottom. Why it is built this way is recorded in [ADR 0012](../../doc/adr/0012-3d-printed-enclosure.md). The wiring and the rest of a unit's assembly are in [prototype-assembly.md](../prototype-assembly.md).
+The unit's enclosure is a front tub and a back plate, 39 × 166 × 29.5 mm (width × height × depth), printed in two parts and screwed together. It stands upright on the passage wall or gate, held by three magnets in its back. Everything the driver sees and the switch are on the front, and the USB-C port is in the bottom. Each of the up to 8 units at a passage gets its own tub, with as many dots on top as its number, so that the units can be told apart. Why it is built this way is recorded in [ADR 0012](../../doc/adr/0012-3d-printed-enclosure.md). The wiring and the rest of a unit's assembly are in [prototype-assembly.md](../prototype-assembly.md).
 
 <p>
-  <img src="pictures/front.png" width="300" alt="The enclosure from the front, above right: a tall, narrow box with, from the top, the laser sensor's rectangular aperture, the power switch, the red LED above the green one, and the buzzer's sound holes">
+  <img src="pictures/front.png" width="300" alt="The enclosure from the front, above right: a tall, narrow box with, from the top, the laser sensor's rectangular aperture, the power switch, the red LED above the green one, and the buzzer's sound holes, with the dots for unit 8 on top">
   <img src="pictures/back.png" width="300" alt="The enclosure from the back, below left: the back plate with three magnets flush in it and four countersunk screws, and the USB-C port in the bottom">
 </p>
 
@@ -15,7 +15,7 @@ The unit's enclosure is a front tub and a back plate, 39 × 166 × 29.5 mm (widt
 | [\_\_main\_\_.py](__main__.py) | What `just enclosure` runs: the check, then the print files and the pictures |
 | [pictures.py](pictures.py) | Draws the pictures in this README from the model |
 | [pictures/](pictures/) | The pictures |
-| [print/tub.stl](print/tub.stl) | The tub: the front, the walls, and the posts that hold the parts |
+| [print/tub-1.stl](print/tub-1.stl) … [print/tub-8.stl](print/tub-8.stl) | The tub, one for each unit number: the front, the walls, the posts that hold the parts, and 1 to 8 dots on top |
 | [print/back-plate.stl](print/back-plate.stl) | The back plate, with the magnet pockets and the ribs that hold the battery |
 | [print/enclosure.step](print/enclosure.step) | Both parts, for opening in another CAD program |
 
@@ -29,10 +29,15 @@ The unit's enclosure is a front tub and a back plate, 39 × 166 × 29.5 mm (widt
 *A section through the middle, with the front on the left, and the inside from the back with the back plate off. The board and the sensor are drawn as the room they take with their Dupont plugs and wires, and the battery comes off with the back plate.*
 
 - **Front:** from the top, the sensor's aperture, the rocker switch, the red LED above the green one, and the buzzer's sound holes. The LEDs' domes stand about 3.5 mm out of the front, so that an approaching driver can see them from the side.
+- **Top:** 1 to 8 raised dots, 3 mm across and 1 mm high, for the unit's number. They fill a 4 × 2 grid from the front left, a row at a time.
 - **Bottom:** the board's USB-C port, flush with the outside, so that any cable fits.
 - **Back:** three 10 × 5 × 1 mm magnets, flush, spread evenly along the length, and the heads of four countersunk screws.
 - **Inside, from the bottom:** the ESP32 board, component side toward the back, with its USB-C end against the bottom wall and its antenna up. Above its antenna, 10 mm left clear. The battery, flat against the back plate between two ribs, with the buzzer and the LEDs in front of it. The switch. The sensor module at the top, upright, with its chip right behind the aperture.
 - **Left and right:** everything is on the front, so the same unit fits either wall, the right way up. Which side a unit is on is set in software.
+
+<img src="pictures/numbers.png" width="640" alt="The tops of the eight tubs, seen from above with the front at the bottom: unit 1 has one dot at the front left, units 2 to 4 add dots along the front row, and units 5 to 8 fill the row behind it in the same order">
+
+*The tops of the tubs for units 1 to 8, seen from above with the front at the bottom.*
 
 The sensor's aperture is 4 × 6 mm at the chip, which is 3 × 5 mm, and widens toward the outside at 20° on each side, more than half the sensor's 27° field of view, so that its sides stay out of the sensor's view. The front is 2 mm thick there. There is no window: a window needs crosstalk calibration ([ADR 0004](../../doc/adr/0004-vl53l1x-distance-sensor.md)).
 
@@ -56,7 +61,7 @@ Print in **PETG, dark and opaque**. PLA softens at about 55 °C, which a garage 
 
 The model is drawn for a 0.4 mm nozzle: 0.2 mm layers, at least 4 walls, so that the 2 mm walls are solid, and 20% infill. Neither part needs supports.
 
-- **Tub:** front down on the bed. The front comes out smooth, the holes in it and the posts and pins inside print without supports, and only the top of the USB-C slot bridges, over 10 mm.
+- **Tub:** the one with the unit's number, front down on the bed. The front comes out smooth, the holes in it, the posts and pins inside and the dots on top print without supports, and only the top of the USB-C slot bridges, over 10 mm.
 - **Back plate:** outside down on the bed, so that the magnet pockets and the countersinks open onto the bed and the ribs point up.
 
 The enclosure hasn't been printed yet. The holes for the switch (15.2 mm), the LEDs (5.1 mm), the inserts (4.1 mm) and the board's screws (2.7 mm), and the pins for the sensor and the buzzer (2.8 mm, in 3 mm holes), are drawn for a printer whose holes come out about 0.1 mm small. If one doesn't fit, change it in [model.py](model.py), see [Changing the model](#changing-the-model).

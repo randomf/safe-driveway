@@ -23,7 +23,9 @@ def main() -> int:
         return 1
 
     PRINT.mkdir(exist_ok=True)
-    export_stl(tub, PRINT / "tub.stl", tolerance=0.01, angular_tolerance=0.1)
+    for number in range(1, model.UNITS + 1):
+        numbered = model.numbered_tub(tub, number)
+        export_stl(numbered, PRINT / f"tub-{number}.stl", tolerance=0.01, angular_tolerance=0.1)
     export_stl(plate, PRINT / "back-plate.stl", tolerance=0.01, angular_tolerance=0.1)
     # A fixed timestamp, so that the file changes only when the model does.
     export_step(

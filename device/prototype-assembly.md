@@ -31,7 +31,7 @@ This document covers hardware only. The distance thresholds are set per passage 
 | JST-PH 2.0 two-pin extension lead, 10–20 cm | 1 | Plug on one end, socket on the other. The battery plugs into its socket, and the switch is spliced into it so the battery leads are never cut. Its plug is cut off, and its wires soldered to the back of the board's battery socket |
 | Pin headers, 2.54 mm, straight | | For the board and the sensor, if they came without them |
 | Dupont jumper wires, female, 2.54 mm | | For the pins of the board and the sensor |
-| 3D-printed enclosure | 1 | A tub and a back plate, with three magnets, four heat-set inserts and six M3 screws. See [enclosure/README.md](enclosure/README.md#hardware) |
+| 3D-printed enclosure | 1 | The tub with the unit's number, and a back plate, with three magnets, four heat-set inserts and six M3 screws. See [enclosure/README.md](enclosure/README.md#hardware) |
 | Stranded hook-up wire, 24–26 AWG, several colours | | Silicone insulation is easiest to route |
 | Heat-shrink tubing, assorted | | |
 | Double-sided foam tape, hot glue | | For the battery, the LEDs and strain relief |
@@ -161,10 +161,10 @@ Notes:
 
 The unit goes into a 3D-printed enclosure, 39 × 166 × 29.5 mm, which stands upright on the passage wall or gate, held by three magnets in its back. [enclosure/README.md](enclosure/README.md) describes it, how to print it and how the parts go into it, and [ADR 0012](../doc/adr/0012-3d-printed-enclosure.md) why it is built this way.
 
-Everything the driver sees is on the front, which faces the passage: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes. The board's USB-C port is flush in the bottom wall.
+Everything the driver sees is on the front, which faces the passage: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes. The board's USB-C port is flush in the bottom wall. The top carries 1 to 8 dots, the unit's number, so that the units at a passage can be told apart: each gets the tub with its own number.
 
 <p>
-  <img src="enclosure/pictures/front.png" width="300" alt="The enclosure from the front: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes">
+  <img src="enclosure/pictures/front.png" width="300" alt="The enclosure from the front: from the top, the laser sensor's aperture, the power switch, the red LED above the green one, and the buzzer's sound holes, with the dots for unit 8 on top">
   <img src="enclosure/pictures/inside.png" width="280" alt="The inside from the back, with the back plate off: the laser sensor at the top, the power switch, the red and green LEDs, the buzzer, and the ESP32 board at the bottom">
 </p>
 

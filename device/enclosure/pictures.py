@@ -32,6 +32,7 @@ FONT_PT = 9
 LABEL_GAP = 6.0  # mm between labels
 LABELS_W = 64.0  # mm to the right of the drawing for the labels
 MARGIN = 6.0
+CAPTION_H = 4.0  # mm, the height of a caption's text
 LONGEST_EDGE = 3.0  # mm, of the triangles painted
 FOG = 0.3  # how much darker the farthest triangles are than the nearest
 INK = "#333333"
@@ -65,12 +66,22 @@ class Dimension:
 
 
 @dataclass(frozen=True)
+class Caption:
+    text: str
+    at: Point  # the middle of its top edge
+
+
+@dataclass(frozen=True)
 class Picture:
     name: str
     forward: Point  # the direction the eye looks in
     parts: tuple[tuple[Part, Colour], ...]
     labels: tuple[Label, ...] = ()
     dimensions: tuple[Dimension, ...] = ()
+    captions: tuple[Caption, ...] = ()
+
+
+PICTURED_UNIT = 8  # the unit number on the tub in the pictures, with all its dots
 
 
 def outside(x: float, y: float, z: float) -> Point:
@@ -86,7 +97,8 @@ def unit(v: Iterable[float]) -> np.ndarray:
 def camera(forward: Point) -> np.ndarray:
     """Rows: the screen's right, its up, and the direction into the screen."""
     f = unit(forward)
-    r = unit(np.cross((0.0, 1.0, 0.0), f))
+    looking_down = abs(f[1]) > 0.99  # then the back of the box is up on the screen
+    r = unit(np.cross((0.0, 0.0, 1.0) if looking_down else (0.0, 1.0, 0.0), f))
     return np.array([r, np.cross(f, r), f])
 
 
@@ -183,7 +195,9 @@ def draw(picture: Picture) -> Image.Image:
         return float(x), float(y)
 
     polygons, colours = painted(picture.parts, view)
-    extra = [project(p) for d in picture.dimensions for p in (d.start, d.end)]
+    extra = [project(p) for d in picture.dimensions for p in (d.start, d.end)] + [
+        (x, y - CAPTION_H) for x, y in (project(c.at) for c in picture.captions)
+    ]
     corners = np.concatenate([polygons.reshape(-1, 2), np.array(extra).reshape(-1, 2)])
     lo, hi = corners.min(axis=0) - MARGIN, corners.max(axis=0) + MARGIN
     labels_w = LABELS_W if picture.labels else 0.0
@@ -207,6 +221,9 @@ def draw(picture: Picture) -> Image.Image:
     draw_labels(ax, picture.labels, project, hi[0])
     for dimension in picture.dimensions:
         draw_dimension(ax, dimension, project)
+    for caption in picture.captions:
+        x, y = project(caption.at)
+        ax.text(x, y, caption.text, color=INK, fontsize=FONT_PT + 2, ha="center", va="top")
     fig.canvas.draw()
     drawn = Image.fromarray(np.asarray(fig.canvas.buffer_rgba())).convert("RGB")
     return drawn.resize(size, Image.Resampling.LANCZOS).quantize(256, dither=Image.Dither.NONE)
@@ -224,10 +241,31 @@ def halved(parts: Iterable[tuple[Part, Colour]]) -> tuple[tuple[Part, Colour], .
     return tuple((part, colour) for part, colour in cut if part.volume > 1e-6)
 
 
+def numbers(tub: Part) -> Picture:
+    """The tops of the tubs for each unit number, side by side, seen from above."""
+    top = tub & Pos(-1, m.HEIGHT - 4, -1) * Box(m.WIDTH + 2, 10, m.DEPTH + 2, align=Align.MIN)
+    spacing = m.WIDTH + 10
+    units = range(1, m.UNITS + 1)
+    return Picture(
+        "numbers",
+        forward=(0, -1, 0),
+        parts=tuple(
+            (Pos(i * spacing, 0, 0) * (top + m.dots(number)), ENCLOSURE)
+            for i, number in enumerate(units)
+        ),
+        captions=tuple(
+            Caption(str(number), (i * spacing + m.WIDTH / 2, m.HEIGHT, -3))
+            for i, number in enumerate(units)
+        ),
+    )
+
+
 def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture, ...]:
     def coloured(*names: str) -> tuple[tuple[Part, Colour], ...]:
         return tuple((parts[name], COLOURS[name]) for name in names)
 
+    plain_tub = tub
+    tub = m.numbered_tub(plain_tub, PICTURED_UNIT)
     shell = ((tub, ENCLOSURE), (plate, PLATE))
     everything = (*shell, *coloured(*parts))
     cx = m.CENTRE_X
@@ -243,6 +281,8 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
     # Where there are several, a label points at the one nearest to it and gives the count.
     # Seen from the back, the model's left is on the right of the picture.
     left_screw = m.CASE_SCREWS[1]
+    dot_x, dot_z = m.dot_positions(PICTURED_UNIT)[m.DOT_GRID[0] - 1]  # front right
+    corner_dot = (dot_x, m.HEIGHT + m.DOT_H, dot_z)
     w, h, d = m.WIDTH, m.HEIGHT, m.DEPTH
     return (
         Picture(
@@ -255,6 +295,7 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
                 Label("Red LED", (outside(cx, m.LEDS_Y[1], led_tip),)),
                 Label("Green LED", (outside(cx, m.LEDS_Y[0], led_tip),)),
                 Label("Buzzer sound holes", (outside(bx, by, front),)),
+                Label("Dots for the unit's number", (corner_dot,)),
             ),
         ),
         Picture(
@@ -342,4 +383,5 @@ def pictures(tub: Part, plate: Part, parts: Mapping[str, Part]) -> tuple[Picture
                 Label("USB-C slot", (outside(usb[0], 0, usb[1]),)),
             ),
         ),
+        numbers(plain_tub),
     )
